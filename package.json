@@ -4,10 +4,10 @@
   "description": "Backend services of the Utonoma project",
   "license": "MIT",
   "author": "Adrián Armenta Sequeira",
-  "type": "module",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
+    "dev": "ts-node-dev --respawn --transpile-only src/improvedServert.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
@@ -19,5 +19,11 @@
     "express-rate-limit": "^8.2.1",
     "form-data": "^4.0.5",
     "helmet": "^8.1.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.1.0",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.9.3"
   }
 }
