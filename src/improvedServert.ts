@@ -18,17 +18,10 @@ interface PinataPinJsonPayload {
 
 interface PinataPinJsonResponse {
   IpfsHash?: string;
-  cid?: string;
-  Hash?: string;
-  PinSize?: number;
-  Timestamp?: string;
-  isDuplicate?: boolean;
-  // otros campos que quieras agregar si los usas
 }
 
 dotenv.config();
 
-const PINATA_TIMEOUT_MS = Number(process.env.PINATA_TIMEOUT_MS || 60_000);
 const PINATA_PIN_JSON_URL: URL = new URL("https://api.pinata.cloud/pinning/pinJSONToIPFS");
 
 const PINATA_JWT = process.env.PINATA_JWT;
@@ -62,6 +55,15 @@ app.post('/uploadToUtonoma', async (req: Request, res: Response) => {
     return res.status(400).json({ error: "shortVideoTitle and shortVideoDescription are required and must be strings" });
   }
 
+  const pinataPayload : PinataPinJsonPayload = {
+    pinataContent: {
+      shortVideoTitle,
+      shortVideoDescription,
+    },
+    pinataOptions: { cidVersion: 0 },
+    pinataMetadata: { name: "test from typescript 123" }
+  }
+
   try {
     const rawPinataResp = await fetch(PINATA_PIN_JSON_URL,
       {
@@ -70,28 +72,34 @@ app.post('/uploadToUtonoma', async (req: Request, res: Response) => {
           Authorization: `Bearer ${PINATA_JWT}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          pinataContent: {
-            shortVideoTitle,
-            shortVideoDescription,
-          },
-          pinataOptions: { cidVersion: 0 },
-          pinataMetadata: { name: "test from typescript 123" },
-          timeout: PINATA_TIMEOUT_MS,
-        }),
+        body: JSON.stringify(pinataPayload),
       }
     )
 
-    const pinataResp: PinataPinJsonResponse = await rawPinataResp.json();
-    /**
-     * {
-        "IpfsHash": "QmUvpuwFTv746Du2UKQ9rdm676aVKUMahVqMZfJ4hHEdGE",    }
-     */
+    const pinataResp: unknown = await rawPinataResp.json();
 
-    console.log("Upload response:", pinataResp);
-    return res.status(200).json({ message: "Metadata received successfully", pinataResp });
+    if (!isPinataPinJsonResponse(pinataResp)) {
+      return res.status(502).json({ error: "Invalid Pinata response" });
+    }
+
+    const endpointResp = pinataResp as PinataPinJsonResponse;
+
+    console.log("Upload response:", endpointResp);
+    return res.status(200).json(endpointResp);
   } catch (error) {
     console.error("Error uploading to Pinata:", error);
     return res.status(500).json({ error: "Failed to upload metadata to Pinata" });
   }
 })
+
+
+function isPinataPinJsonResponse(data: unknown): data is PinataPinJsonResponse {
+  if (typeof data !== "object" || data === null) {
+    return false;
+  }
+
+  const d = data as Record<string, unknown>;
+
+  const hasValidCid = typeof d.IpfsHash === "string"
+  return hasValidCid;
+}
