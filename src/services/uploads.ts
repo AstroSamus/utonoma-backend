@@ -1,4 +1,4 @@
-import { PendingUploadRow, query } from "../db";
+import { PendingUploadRow, query, UploadStatus } from "../db";
 
 export interface CreatePendingUploadParams {
   content_cid: string;
@@ -17,4 +17,16 @@ export async function createPendingUpload(
       )
   `)
   return rows[0];
+}
+
+export async function updateUploadStatus(
+  uid: number, 
+  status: UploadStatus
+): Promise<PendingUploadRow> {
+  const { rows } = await query<PendingUploadRow>(`
+    UPDATE public.uploads 
+    SET status='${status}'
+	  WHERE uid=${uid};
+  `)
+  return rows[0]
 }
