@@ -18,6 +18,18 @@ export async function createPendingUpload(
   `)
   return rows[0];
 }
+/**
+ * Usage sample:
+      createPendingUpload({
+        content_cid: 'third try',
+        metadata_cid: 'fdsafe',
+        extra_cids: {
+          videoFullRes: 'fesafaesfes',
+          ffeas: 'feafes'
+        }
+     })
+ * 
+ */
 
 export async function updateUploadStatus(
   uid: number, 
@@ -30,3 +42,7 @@ export async function updateUploadStatus(
   `)
   return rows[0]
 }
+/**
+ * Usage sample:
+  updateUploadStatus(5, 'DISMISSED')
+ */
