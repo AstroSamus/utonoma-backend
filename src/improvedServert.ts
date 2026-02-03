@@ -1,5 +1,6 @@
 import express, { json, Request, Response } from "express";
 import dotenv from "dotenv"
+import { PendingUploadRow, query } from "./db.ts";
 
 interface VideoMetadata {
   shortVideoTitle: string;
@@ -40,6 +41,18 @@ app.get("/", (req: Request, res: Response) => {
 
 app.listen(PORT, () => {
   console.log(`🚀 Server listening on http://localhost:${PORT}`);
+});
+
+app.get('/allRows', async (req: Request, res: Response) => {
+  try {
+    const { rows } = await query<PendingUploadRow>(
+      'SELECT * FROM public.uploads ORDER BY uid ASC'
+    )
+    return res.status(200).json({ rows });
+  } catch (error) {
+    console.error("Error fetching rows:", error);
+    return res.status(500).json({ error: "Failed to fetch rows from database" });
+  }
 });
 
 app.post('/uploadToUtonoma', async (req: Request, res: Response) => {
