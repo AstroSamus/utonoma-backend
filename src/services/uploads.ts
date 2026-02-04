@@ -1,10 +1,5 @@
 import { PendingUploadRow, query, UploadStatus } from "../db";
-
-export interface CreatePendingUploadParams {
-  content_cid: string;
-  metadata_cid: string;
-  extra_cids: object | null;
-}
+import {CreatePendingUploadParams} from '../types'
 
 export async function createPendingUpload(
   params: CreatePendingUploadParams
