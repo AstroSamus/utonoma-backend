@@ -22,3 +22,11 @@ export interface CreatePendingUploadParams {
   metadata_cid: string;
   extra_cids: object | null;
 }
+
+type UploadJsonToIpfsInput = 
+  | { //short videos
+      type: "json";
+      shortVideoTitle: string;
+      shortVideoDescription: string;
+    }
+  // you can add other dtos here
