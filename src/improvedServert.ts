@@ -1,25 +1,16 @@
 import express, { json, Request, Response } from "express";
 import dotenv from "dotenv"
-import { PendingUploadRow, query } from "./db.ts";
+import { PendingUploadRow, query } from "./db.js";
+import {
+  updateUploadStatus 
+} from './services/uploads.js'
+import {
+  VideoMetadata, 
+  PinataPinJsonPayload, 
+  PinataPinJsonResponse,
+  isPinataPinJsonResponse
+} from './types.js'
 
-interface VideoMetadata {
-  shortVideoTitle: string;
-  shortVideoDescription: string;
-}
-
-interface PinataPinJsonPayload {
-  pinataContent: unknown;
-  pinataOptions?: {
-    cidVersion?: number;
-  };
-  pinataMetadata?: {
-    name?: string;
-  };
-}
-
-interface PinataPinJsonResponse {
-  IpfsHash?: string;
-}
 
 dotenv.config();
 
@@ -36,6 +27,11 @@ const PORT: number = 3000;
 app.use(express.json());
 
 app.get("/", (req: Request, res: Response) => {
+  try {
+    updateUploadStatus(5, 'DISMISSED')
+  } catch (error) {
+    console.log(error)
+  }
   res.json({ message: "hello world" });
 });
 
@@ -54,6 +50,16 @@ app.get('/allRows', async (req: Request, res: Response) => {
     return res.status(500).json({ error: "Failed to fetch rows from database" });
   }
 });
+
+/**
+ * flujo para hacer uploadToUtonoma
+ * se checa que el body contenga el video de forma correcta
+ * se checa que el body contenga la metadata de forma correcta
+ * se sube el video a ipfs y se sube la metadata a ipfs de forma concurrente
+ * cuando ambos jobs terminan:
+ * Se hace una llamada a createPendingUpload pasandole los cids retornados en el paso anterior
+ */
+
 
 app.post('/uploadToUtonoma', async (req: Request, res: Response) => {
   const body = req.body;
@@ -105,14 +111,69 @@ app.post('/uploadToUtonoma', async (req: Request, res: Response) => {
   }
 })
 
+app.get('/uploadShortVideo', (req, res) => {
+  //1. validate that the req has all the information needed
+  const [resultA, restultB] = await Promise.all(
+    uploadShortVideoMetadata(req.body.metadata)
+    uploadMainContent(req.body.content)
+  )
 
-function isPinataPinJsonResponse(data: unknown): data is PinataPinJsonResponse {
-  if (typeof data !== "object" || data === null) {
-    return false;
+})
+
+/**Placeholder for the real method to upload content */
+async function uploadMainContent(content) {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve(content);
+    }, 3000);
+  });
+}
+
+async function uploadShortVideoMetadata(payload: ) {
+  if (!body || typeof body !== "object") {
+    return res.status(400).json({ error: "Body must be a JSON object" });
+  }
+  //when casting with partial, all the properties become optional, this is useful
+  //as we don't know if all the properties where incluided in the request
+  const { shortVideoTitle, shortVideoDescription } = body as Partial<VideoMetadata>;
+
+  if (typeof shortVideoTitle !== "string" || typeof shortVideoDescription !== "string") {
+    return res.status(400).json({ error: "shortVideoTitle and shortVideoDescription are required and must be strings" });
   }
 
-  const d = data as Record<string, unknown>;
+  const pinataPayload : PinataPinJsonPayload = {
+    pinataContent: {
+      shortVideoTitle,
+      shortVideoDescription,
+    },
+    pinataOptions: { cidVersion: 0 },
+    pinataMetadata: { name: "test from typescript 123" }
+  }
 
-  const hasValidCid = typeof d.IpfsHash === "string"
-  return hasValidCid;
-}
+  try {
+    const rawPinataResp = await fetch(PINATA_PIN_JSON_URL,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${PINATA_JWT}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(pinataPayload),
+      }
+    )
+
+    const pinataResp: unknown = await rawPinataResp.json();
+
+    if (!isPinataPinJsonResponse(pinataResp)) {
+      return res.status(502).json({ error: "Invalid Pinata response" });
+    }
+
+    const endpointResp = pinataResp as PinataPinJsonResponse;
+
+    console.log("Upload response:", endpointResp);
+    return res.status(200).json(endpointResp);
+  } catch (error) {
+    console.error("Error uploading to Pinata:", error);
+    return res.status(500).json({ error: "Failed to upload metadata to Pinata" });
+  }
+} 
