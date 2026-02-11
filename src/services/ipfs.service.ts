@@ -4,9 +4,13 @@ import {
   UploadJsonToIpfsInput,
   isPinataPinJsonResponse 
 } from '../types'
+import { Readable } from "node:stream";
+import FormData from 'form-data'
+import axios from "axios"
 
 dotenv.config();
 const PINATA_PIN_JSON_URL: URL = new URL("https://api.pinata.cloud/pinning/pinJSONToIPFS");
+const PINATA_PIN_FILE_URL = 'https://api.pinata.cloud/pinning/pinFileToIPFS'
 const PINATA_JWT = process.env.PINATA_JWT;
 if (!PINATA_JWT) {
   throw new Error('Missing env PINATA_JWT in ipfs service')
@@ -34,4 +38,50 @@ export async function uploadJsonToIpfs(payload: UploadJsonToIpfsInput): Promise<
   }
   //by using the type guard, typescript already knows the type of pinataResp
   return pinataResp;
+}
+
+/**
+ * Streams a readable stream to ipfs
+ */
+export async function uploadVideoToIpfs(fileStream: Readable ): Promise<PinataPinJsonResponse> {
+  console.log('triggered method')
+  
+  const formToUpload = new FormData()
+
+  formToUpload.append('file', fileStream, {
+    filename: 'video.mp4',
+    contentType: 'video/mp4',
+  });
+
+  formToUpload.append("pinataOptions", JSON.stringify({ cidVersion: 0 }));
+
+  const headers = {
+    ...formToUpload.getHeaders(),
+    Authorization: `Bearer ${PINATA_JWT}`,
+  }
+
+  console.log('calling method fetch')
+
+  try {
+    const pinataResp = await axios.post(PINATA_PIN_FILE_URL, formToUpload, {
+      headers,
+      maxBodyLength: Infinity,
+      maxContentLength: Infinity,
+    });
+
+    console.log(pinataResp.status)
+    console.log(pinataResp.data)
+
+    const cid = pinataResp.data
+
+    if (!isPinataPinJsonResponse(cid)) {
+      throw new Error(`
+        error when pinning video to ipfs
+      `)
+    }
+
+    return cid;
+  } catch (error) {
+    console.log(error)
+  }
 }
