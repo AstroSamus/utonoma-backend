@@ -9,6 +9,8 @@ import {
   uploadVideoToIpfsService
 } from '../services/ipfs.service'
 
+const ALLOWED_VIDEO_TYPES = new Set(['video/mp4', 'video/webm'])
+
 export async function uploadVideoToIpfsController(req: Request, res: Response) {
   //Validate the we are dealing with multipart form data
   const ct = req.headers['content-type'] || ''
@@ -33,8 +35,6 @@ export async function uploadVideoToIpfsController(req: Request, res: Response) {
     res.status(status).json(payload);
   };
 
-
-
   busboy.on('field', (name, value) => {
     try {
       const metadata = JSON.parse(value)
@@ -47,4 +47,22 @@ export async function uploadVideoToIpfsController(req: Request, res: Response) {
     }
   })
 
+  busboy.on('file', (fieldname, fileStream, info) => {
+    const { mimeType } = info
+    if(!ALLOWED_VIDEO_TYPES.has(mimeType)) {
+      fileStream.resume() //discards the stream
+      return respondOnce(415, { error: 'Unsupported media type'})
+    }
+
+    (async () => {
+      try {
+        const result = await uploadVideoToIpfsService(fileStream) //pipe stream to IPFS
+        res.json(result);
+      } catch (e) {
+        res.status(500).json({ error: 'fail when uploading video to IPFSf' });
+      }
+    })()
+  })
+
+  req.pipe(busboy)
 }
