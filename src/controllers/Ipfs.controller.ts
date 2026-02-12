@@ -2,7 +2,9 @@ import { Request, Response } from 'express'
 import Busboy from 'busboy';
 import {
   isVideoMetadata,
-  videoMetadata
+  VideoMetadata,
+  UploadVideoToIpfsResponse,
+  PinataPinJsonResponse
 } from '../types'
 import {
   uploadJsonToIpfsService,
@@ -28,38 +30,65 @@ export async function uploadVideoToIpfsController(req: Request, res: Response) {
   })
 
   let responded = false;
+  const responseData: UploadVideoToIpfsResponse = {}
 
   const respondOnce = (status: number, payload: any) => {
     if (responded || res.headersSent) return;
+
     responded = true;
     res.status(status).json(payload);
   };
 
+  let isMetadataIncluided = false
+  let isVideoIncluided = false
+
+  //logic for the metadata
   busboy.on('field', (name, value) => {
+    if(isMetadataIncluided) 
+      return respondOnce(400, { error: "Duplicate metadata in the request." })
     try {
       const metadata = JSON.parse(value)
       if(!isVideoMetadata(metadata))
-        return respondOnce(400, { error: "Field 'metadata' must be valid JSON." });
-      (async () => {await uploadJsonToIpfsService(metadata)})()
+        return respondOnce(400, { error: "Field 'metadata' must be valid JSON." })
+
+      isMetadataIncluided = true;
+
+      (async () => {
+        const metadataCid = await uploadJsonToIpfsService(metadata)
+        responseData.metadataCid = metadataCid
+        //respond only if both the video and the metadata have been uploaded to IPFS, 
+        // otherwise wait for the other one to finish
+        if(responseData?.metadataCid && responseData?.contentCid)
+          respondOnce(200, responseData)
+      })()
       //if upload is successful you will upload this to the database for the pin unpin worker
     } catch {
       return respondOnce(400, { error: "Error uploading metadata to ipfs." });
     }
   })
 
+  //logic for the video
   busboy.on('file', (fieldname, fileStream, info) => {
+    if(!isVideoIncluided) 
+      return respondOnce(400, { error: "Duplicate video in the request." })
     const { mimeType } = info
     if(!ALLOWED_VIDEO_TYPES.has(mimeType)) {
       fileStream.resume() //discards the stream
       return respondOnce(415, { error: 'Unsupported media type'})
     }
 
+    isVideoIncluided = true;
+
     (async () => {
       try {
-        const result = await uploadVideoToIpfsService(fileStream) //pipe stream to IPFS
-        res.json(result);
+        const contentCid = await uploadVideoToIpfsService(fileStream) //pipe stream to IPFS
+        responseData.contentCid = contentCid
+        //respond only if both the video and the metadata have been uploaded to IPFS, 
+        // otherwise wait for the other one to finish
+        if(responseData?.metadataCid && responseData?.contentCid)
+          respondOnce(200, responseData)
       } catch (e) {
-        res.status(500).json({ error: 'fail when uploading video to IPFSf' });
+        respondOnce(500, { error: 'fail when uploading video to IPFS' });
       }
     })()
   })

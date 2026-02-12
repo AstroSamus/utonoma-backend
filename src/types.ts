@@ -53,3 +53,8 @@ export function isVideoMetadata(data: unknown): data is videoMetadata {
     typeof obj.shortVideoDescription === "string"
   )
 }
+
+export type UploadVideoToIpfsResponse = {
+  metadataCid?: PinataPinJsonResponse,
+  contentCid?: PinataPinJsonResponse
+}
