@@ -69,9 +69,6 @@ export async function uploadVideoToIpfs(fileStream: Readable ): Promise<PinataPi
       maxContentLength: Infinity,
     });
 
-    console.log(pinataResp.status)
-    console.log(pinataResp.data)
-
     const cid = pinataResp.data
 
     if (!isPinataPinJsonResponse(cid)) {
@@ -82,6 +79,6 @@ export async function uploadVideoToIpfs(fileStream: Readable ): Promise<PinataPi
 
     return cid;
   } catch (error) {
-    console.log(error)
+    throw error
   }
 }
