@@ -34,7 +34,7 @@ export interface CreatePendingUploadParams {
   extra_cids: object | null;
 }
 
-export interface videoMetadata {
+export interface VideoMetadata {
   type: "json";
   shortVideoTitle: string;
   shortVideoDescription: string;
