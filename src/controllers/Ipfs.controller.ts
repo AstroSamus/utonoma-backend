@@ -13,6 +13,11 @@ import {
 
 const ALLOWED_VIDEO_TYPES = new Set(['video/mp4', 'video/webm'])
 
+/**
+ * 
+ * @notice Send the metadata first in the form as in this way the client can start uploading 
+ * the video to ipfs while the metadata is being uploaded, this will reduce the total upload time
+ */
 export async function uploadVideoToIpfsController(req: Request, res: Response) {
   //Validate the we are dealing with multipart form data
   const ct = req.headers['content-type'] || ''
