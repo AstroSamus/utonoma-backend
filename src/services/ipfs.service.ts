@@ -1,7 +1,7 @@
 import dotenv from "dotenv"
 import { 
   PinataPinJsonResponse, 
-  UploadJsonToIpfsInput,
+  videoMetadata,
   isPinataPinJsonResponse 
 } from '../types'
 import { Readable } from "node:stream";
@@ -16,7 +16,7 @@ if (!PINATA_JWT) {
   throw new Error('Missing env PINATA_JWT in ipfs service')
 }
 
-export async function uploadJsonToIpfs(payload: UploadJsonToIpfsInput): Promise<PinataPinJsonResponse> {
+export async function uploadJsonToIpfsService(payload: videoMetadata): Promise<PinataPinJsonResponse> {
   const rawPinataResp = await fetch(PINATA_PIN_JSON_URL,
     {
       method: "POST",
@@ -43,7 +43,7 @@ export async function uploadJsonToIpfs(payload: UploadJsonToIpfsInput): Promise<
 /**
  * Streams a readable stream to ipfs
  */
-export async function uploadVideoToIpfs(fileStream: Readable ): Promise<PinataPinJsonResponse> {
+export async function uploadVideoToIpfsService(fileStream: Readable ): Promise<PinataPinJsonResponse> {
   console.log('triggered method')
   
   const formToUpload = new FormData()

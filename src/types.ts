@@ -34,10 +34,22 @@ export interface CreatePendingUploadParams {
   extra_cids: object | null;
 }
 
-export type UploadJsonToIpfsInput = 
-  | { //short videos
-      type: "json";
-      shortVideoTitle: string;
-      shortVideoDescription: string;
-    }
-  // you can add other dtos here
+export interface videoMetadata {
+  type: "json";
+  shortVideoTitle: string;
+  shortVideoDescription: string;
+}
+
+export function isVideoMetadata(data: unknown): data is videoMetadata {
+  if (typeof data !== "object" || data === null) {
+    return false;
+  }
+
+  const obj = data as Record<string, unknown>;
+
+  return (
+    obj.type === "json" &&
+    typeof obj.shortVideoTitle === "string" &&
+    typeof obj.shortVideoDescription === "string"
+  )
+}
