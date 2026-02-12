@@ -86,7 +86,7 @@ export async function uploadVideoToIpfsController(req: Request, res: Response) {
 
     (async () => {
       try {
-        const contentCid = await uploadVideoToIpfsService(fileStream) //pipe stream to IPFS
+        const contentCid = await uploadVideoToIpfsService(fileStream, mimeType) //pipe stream to IPFS
         responseData.contentCid = contentCid
         //respond only if both the video and the metadata have been uploaded to IPFS, 
         // otherwise wait for the other one to finish

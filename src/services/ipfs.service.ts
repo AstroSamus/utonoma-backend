@@ -1,7 +1,7 @@
 import dotenv from "dotenv"
 import { 
   PinataPinJsonResponse, 
-  videoMetadata,
+  VideoMetadata,
   isPinataPinJsonResponse 
 } from '../types'
 import { Readable } from "node:stream";
@@ -16,7 +16,7 @@ if (!PINATA_JWT) {
   throw new Error('Missing env PINATA_JWT in ipfs service')
 }
 
-export async function uploadJsonToIpfsService(payload: videoMetadata): Promise<PinataPinJsonResponse> {
+export async function uploadJsonToIpfsService(payload: VideoMetadata): Promise<PinataPinJsonResponse> {
   const rawPinataResp = await fetch(PINATA_PIN_JSON_URL,
     {
       method: "POST",
