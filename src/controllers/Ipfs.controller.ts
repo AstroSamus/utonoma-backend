@@ -51,12 +51,11 @@ export async function uploadVideoToIpfsController(req: Request, res: Response) {
   busboy.on('field', (name, value) => {
     if(isMetadataIncluided) 
       return respondOnce(400, { error: "Duplicate metadata in the request." })
+    isMetadataIncluided = true;
     try {
       const metadata = JSON.parse(value)
       if(!isVideoMetadata(metadata))
-        return respondOnce(400, { error: "Field 'metadata' must be valid JSON." })
-
-      isMetadataIncluided = true;
+        return respondOnce(400, { error: "Field 'metadata' must be valid JSON." });
 
       (async () => {
         const metadataCid = await uploadJsonToIpfsService(metadata)
@@ -76,13 +75,12 @@ export async function uploadVideoToIpfsController(req: Request, res: Response) {
   busboy.on('file', (fieldname, fileStream, info) => {
     if(isVideoIncluided) 
       return respondOnce(400, { error: "Duplicate video in the request." })
+    isVideoIncluided = true
     const { mimeType } = info
     if(!ALLOWED_VIDEO_TYPES.has(mimeType)) {
       fileStream.resume() //discards the stream
       return respondOnce(415, { error: 'Unsupported media type'})
     }
-
-    isVideoIncluided = true;
 
     (async () => {
       try {
@@ -96,6 +94,11 @@ export async function uploadVideoToIpfsController(req: Request, res: Response) {
         respondOnce(500, { error: 'fail when uploading video to IPFS' });
       }
     })()
+  })
+
+  busboy.on('finish', () => {
+    if (!isVideoIncluided) return respondOnce(400, { error: "Missing file field 'file'." });
+    if (!isMetadataIncluided) return respondOnce(400, { error: "Missing JSON field 'metadata'." });
   })
 
   req.pipe(busboy)
