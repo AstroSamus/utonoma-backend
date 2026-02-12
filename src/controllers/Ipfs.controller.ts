@@ -69,7 +69,7 @@ export async function uploadVideoToIpfsController(req: Request, res: Response) {
 
   //logic for the video
   busboy.on('file', (fieldname, fileStream, info) => {
-    if(!isVideoIncluided) 
+    if(isVideoIncluided) 
       return respondOnce(400, { error: "Duplicate video in the request." })
     const { mimeType } = info
     if(!ALLOWED_VIDEO_TYPES.has(mimeType)) {
