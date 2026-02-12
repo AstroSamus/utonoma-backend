@@ -35,12 +35,11 @@ export interface CreatePendingUploadParams {
 }
 
 export interface VideoMetadata {
-  type: "json";
   shortVideoTitle: string;
   shortVideoDescription: string;
 }
 
-export function isVideoMetadata(data: unknown): data is videoMetadata {
+export function isVideoMetadata(data: unknown): data is VideoMetadata {
   if (typeof data !== "object" || data === null) {
     return false;
   }
@@ -48,7 +47,6 @@ export function isVideoMetadata(data: unknown): data is videoMetadata {
   const obj = data as Record<string, unknown>;
 
   return (
-    obj.type === "json" &&
     typeof obj.shortVideoTitle === "string" &&
     typeof obj.shortVideoDescription === "string"
   )
