@@ -43,14 +43,16 @@ export async function uploadJsonToIpfsService(payload: VideoMetadata): Promise<P
 /**
  * Streams a readable stream to ipfs
  */
-export async function uploadVideoToIpfsService(fileStream: Readable ): Promise<PinataPinJsonResponse> {
-  console.log('triggered method')
+export async function uploadVideoToIpfsService(
+  fileStream: Readable,
+  mimeType: string
+): Promise<PinataPinJsonResponse> {
   
   const formToUpload = new FormData()
 
   formToUpload.append('file', fileStream, {
-    filename: 'video.mp4',
-    contentType: 'video/mp4',
+    filename: 'video',
+    contentType: mimeType,
   });
 
   formToUpload.append("pinataOptions", JSON.stringify({ cidVersion: 0 }));
@@ -59,8 +61,6 @@ export async function uploadVideoToIpfsService(fileStream: Readable ): Promise<P
     ...formToUpload.getHeaders(),
     Authorization: `Bearer ${PINATA_JWT}`,
   }
-
-  console.log('calling method fetch')
 
   try {
     const pinataResp = await axios.post(PINATA_PIN_FILE_URL, formToUpload, {
