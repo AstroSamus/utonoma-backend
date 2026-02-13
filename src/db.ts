@@ -1,5 +1,6 @@
 import { Pool } from "pg";
 import dotenv from "dotenv";
+import logger from "./infrastructure/logger";
 
 
 dotenv.config();
@@ -30,6 +31,11 @@ pool.on("error", (err) => {
 
 
 export async function query<T = unknown>(text: string, params?: unknown[]): Promise<{ rows: T[]}> {
-  const result = await pool.query<T>(text, params);
-  return { rows: result.rows };
+  try {
+    const result = await pool.query<T>(text, params)
+    return { rows: result.rows };
+  } catch (error) {
+    logger.error({error}, 'error on db. Check if the DB is running')
+    throw error
+  }
 }
