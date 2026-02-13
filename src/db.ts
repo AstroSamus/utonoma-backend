@@ -17,6 +17,8 @@ export interface PendingUploadRow {
   purged: boolean;
 }
 
+export interface UploadUidRow { uid: number };
+
 const pool = new Pool({
   host: process.env.PG_HOST,
   port: Number(process.env.PG_PORT ?? 5432),

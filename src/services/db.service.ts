@@ -1,5 +1,6 @@
-import { PendingUploadRow, query, UploadStatus } from "../db";
+import { PendingUploadRow, UploadUidRow , query, UploadStatus } from "../db";
 import {CreatePendingUploadParams} from '../types'
+import logger from "../infrastructure/logger";
 
 export async function createPendingUpload(
   params: CreatePendingUploadParams
@@ -25,6 +26,16 @@ export async function createPendingUpload(
      })
  * 
  */
+
+
+export async function createUploadEntryWithNoData() : Promise<number> {
+  const { rows } = await query<UploadUidRow>(`
+    INSERT INTO public.uploads
+    VALUES (DEFAULT)
+    RETURNING uid;
+  `)
+  return rows[0].uid;
+}
 
 export async function updateUploadStatus(
   uid: number, 
