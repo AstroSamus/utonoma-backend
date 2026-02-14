@@ -10,6 +10,13 @@ import {
   uploadJsonToIpfsService,
   uploadVideoToIpfsService
 } from '../services/ipfs.service'
+import { 
+  createUploadEntryWithNoData,
+  updateUploadStatus,
+  updateMetadataCid,
+  updateContentCid
+} from '../services/db.service'
+import logger from "../infrastructure/logger"
 
 const ALLOWED_VIDEO_TYPES = new Set(['video/mp4', 'video/webm'])
 
@@ -37,19 +44,16 @@ export async function uploadVideoToIpfsController(req: Request, res: Response) {
   let responded = false;
   const responseData: UploadVideoToIpfsResponse = {}
 
-  const respondOnce = (status: number, payload: any) => {
-    if (responded || res.headersSent) return;
-
-    responded = true;
-    res.status(status).json(payload);
-  };
-
   let isMetadataIncluided = false
   let isVideoIncluided = false
 
-  //logic for the metadata
+
+  //logic for content upload registry
+  // Create a pending upload with empty data
+  const entryUid = await createUploadEntryWithNoData()
+
   busboy.on('field', (name, value) => {
-    if(isMetadataIncluided) 
+    if(isMetadataIncluided)
       return respondOnce(400, { error: "Duplicate metadata in the request." })
     isMetadataIncluided = true;
     try {
@@ -59,6 +63,9 @@ export async function uploadVideoToIpfsController(req: Request, res: Response) {
 
       (async () => {
         const metadataCid = await uploadJsonToIpfsService(metadata)
+
+        await updateMetadataCid(entryUid, metadataCid.IpfsHash) //add metadata cid to the db entry
+
         responseData.metadataCid = metadataCid
         //respond only if both the video and the metadata have been uploaded to IPFS, 
         // otherwise wait for the other one to finish
@@ -85,6 +92,9 @@ export async function uploadVideoToIpfsController(req: Request, res: Response) {
     (async () => {
       try {
         const contentCid = await uploadVideoToIpfsService(fileStream, mimeType) //pipe stream to IPFS
+        
+        await updateContentCid(entryUid, contentCid.IpfsHash)
+
         responseData.contentCid = contentCid
         //respond only if both the video and the metadata have been uploaded to IPFS, 
         // otherwise wait for the other one to finish
@@ -102,4 +112,27 @@ export async function uploadVideoToIpfsController(req: Request, res: Response) {
   })
 
   req.pipe(busboy)
+
+  function respondOnce(status: number, payload: any) {
+    if (responded || res.headersSent) return;
+    if(status >= 400) {
+      //update status in content uploads table to DISMISSED
+      try {
+        updateUploadStatus(entryUid, 'DISMISSED')
+      } catch(error) {
+        logger.error({error}, `
+          critical error: content was not uploaded correctly to IPFS
+          either, because there is a problem uploading metadata or content
+          this content should be flagged as DISMISSED, so the worker can 
+          delete it. But this operation was not completed for some reason.
+          ADMIN OF THE DB SHOULD MANUALLY UPDATE THE STATUS OF THE ENTRY WITH
+          UID ${entryUid} TO DISMISSED.
+          `
+        )
+      }
+    }
+    responded = true
+    res.status(status).json(payload)
+  };
+
 }
