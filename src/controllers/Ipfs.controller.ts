@@ -17,8 +17,17 @@ import {
   updateContentCid
 } from '../services/db.service'
 import logger from "../infrastructure/logger"
+import { createWriteStream } from 'fs';
+import path from 'path';
+import { randomUUID } from 'crypto';
+import { pipeline } from 'stream/promises';
 
-const ALLOWED_VIDEO_TYPES = new Set(['video/mp4', 'video/webm'])
+const ALLOWED_VIDEO_TYPES = new Set([
+  'video/mp4',
+  'video/webm',
+  'video/quicktime',
+  'video/x-matroska'
+])
 const MAX_SHORT_VIDEO_BYTES = 500 * 1024 * 1024 //500 MB
 
 /**
@@ -80,7 +89,7 @@ export async function uploadVideoToIpfsController(req: Request, res: Response) {
   })
 
   //logic for the video
-  busboy.on('file', (fieldname, fileStream, info) => {
+  busboy.on('file', async(fieldname, fileStream, info) => {
     if(isVideoIncluided) 
       return respondOnce(400, { error: "Duplicate video in the request." })
     isVideoIncluided = true
@@ -90,6 +99,19 @@ export async function uploadVideoToIpfsController(req: Request, res: Response) {
       return respondOnce(415, { error: 'Unsupported media type'})
     }
 
+    const tempPath = path.join('/tmp', randomUUID());
+    const writeStream = createWriteStream(tempPath);
+
+    try {
+      console.log('beforw start piping file stream to file')
+      await pipeline(fileStream, writeStream)
+      return respondOnce(500, { ok: 'Uploaded' })
+    } catch (error) {
+      return respondOnce(500, { error: 'Upload failed' })
+    }
+
+
+    /*
     (async () => {
       try {
         const contentCid = await uploadVideoToIpfsService(fileStream, mimeType) //pipe stream to IPFS
@@ -104,7 +126,7 @@ export async function uploadVideoToIpfsController(req: Request, res: Response) {
       } catch (e) {
         respondOnce(500, { error: 'fail when uploading video to IPFS' });
       }
-    })()
+    })()*/
 
     fileStream.on('limit', () => {
       fileStream.unpipe()
