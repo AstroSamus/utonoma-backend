@@ -19,6 +19,7 @@ import {
 import logger from "../infrastructure/logger"
 
 const ALLOWED_VIDEO_TYPES = new Set(['video/mp4', 'video/webm'])
+const MAX_SHORT_VIDEO_BYTES = 500 * 1024 * 1024 //500 MB
 
 /**
  * 
@@ -37,7 +38,7 @@ export async function uploadVideoToIpfsController(req: Request, res: Response) {
     limits: {
       files: 1, //one file that will be the video
       fields: 1, //one field that will be the metadata
-      //fileSize: MAX_FILE_BYTES, limit the size of the video
+      fileSize: MAX_SHORT_VIDEO_BYTES,
     },
   })
 
@@ -104,6 +105,12 @@ export async function uploadVideoToIpfsController(req: Request, res: Response) {
         respondOnce(500, { error: 'fail when uploading video to IPFS' });
       }
     })()
+
+    fileStream.on('limit', () => {
+      fileStream.unpipe()
+      fileStream.resume()
+      respondOnce(413, { error: 'File too large' })
+    })
   })
 
   busboy.on('finish', () => {
