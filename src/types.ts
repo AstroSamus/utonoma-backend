@@ -56,3 +56,20 @@ export type UploadVideoToIpfsResponse = {
   metadataCid?: PinataPinJsonResponse,
   contentCid?: PinataPinJsonResponse
 }
+
+export interface GetActualVideoInfoResult {
+  width: number;
+  height: number;
+  duration: number;    // in ms
+  codecName: string | null
+  codecType: string | null
+  formatName: string | null
+  isValid: boolean
+  isWebM: boolean
+}
+
+export interface CodecInfo {
+  codecName: string | null
+  codecType: string | null
+  formatName: string | null
+}
