@@ -21,6 +21,7 @@ import { createWriteStream } from 'fs';
 import path from 'path';
 import { randomUUID } from 'crypto';
 import { pipeline } from 'stream/promises';
+import { getActualVideoInfo } from '../utils/videoUtils';
 
 const ALLOWED_VIDEO_TYPES = new Set([
   'video/mp4',
@@ -103,9 +104,12 @@ export async function uploadVideoToIpfsController(req: Request, res: Response) {
     const writeStream = createWriteStream(tempPath);
 
     try {
-      console.log('beforw start piping file stream to file')
       await pipeline(fileStream, writeStream)
-      return respondOnce(500, { ok: 'Uploaded' })
+      const actualVideoInfo = await getActualVideoInfo(tempPath)
+      if(!actualVideoInfo.isValid) {
+        //delete the video from tmp
+        return respondOnce(500, { error: 'Upload failed' })
+      }
     } catch (error) {
       return respondOnce(500, { error: 'Upload failed' })
     }
