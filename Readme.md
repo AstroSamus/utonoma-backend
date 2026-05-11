@@ -21,5 +21,7 @@ psql -h localhost -U myuser -d mydb -f schema.sql
 
 5. Install the project with npm install
 
+6. Install ffmpeg with sudo apt install ffmpeg or similar (depending on os). This is important as we call ffmpeg from node
+
 6. run with npm run dev 
 do not forget to run "sudo systemctl start postgresql" to start the postresql server
