@@ -1,15 +1,18 @@
 import express, { json, Request, Response } from "express";
 import dotenv from "dotenv"
-import { PendingUploadRow, query } from "./db.js";
+import { PendingUploadRow, query } from "./db";
 import {
-  updateUploadStatus 
-} from './services/uploads.js'
+  createPendingUpload,
+  updateUploadStatus,
+  createUploadEntryWithNoData
+} from './services/db.service'
 import {
   VideoMetadata, 
   PinataPinJsonPayload, 
   PinataPinJsonResponse,
   isPinataPinJsonResponse
-} from './types.js'
+} from './types'
+import { uploadVideoToIpfsController } from "./controllers/Ipfs.controller";
 
 
 dotenv.config();
@@ -26,13 +29,15 @@ const PORT: number = 3000;
 
 app.use(express.json());
 
-app.get("/", (req: Request, res: Response) => {
+app.get("/", async (req: Request, res: Response) => {
   try {
+    const log = await createUploadEntryWithNoData()
     updateUploadStatus(5, 'DISMISSED')
+    res.json({ message: "hello world" });
   } catch (error) {
     console.log(error)
+    res.json({ error });
   }
-  res.json({ message: "hello world" });
 });
 
 app.listen(PORT, () => {
@@ -50,6 +55,10 @@ app.get('/allRows', async (req: Request, res: Response) => {
     return res.status(500).json({ error: "Failed to fetch rows from database" });
   }
 });
+
+app.post('/testVideo', (req: Request, res: Response) => {
+  uploadVideoToIpfsController(req, res)
+})
 
 /**
  * flujo para hacer uploadToUtonoma
@@ -111,16 +120,20 @@ app.post('/uploadToUtonoma', async (req: Request, res: Response) => {
   }
 })
 
-app.get('/uploadShortVideo', (req, res) => {
+app.get('/uploadShortVideo', async (req, res) => {
   //1. validate that the req has all the information needed
-  const [resultA, restultB] = await Promise.all(
-    uploadShortVideoMetadata(req.body.metadata)
-    uploadMainContent(req.body.content)
-  )
+  /*const [resultA, restultB] = await Promise.all(
+    uploadShortVideoMetadata(req.body.metadata), //uploads metadata json to ipfs
+    uploadMainContent(req.body.content) //uploads the content to ipfs
+  )*/
 
 })
 
-/**Placeholder for the real method to upload content */
+/**
+ * 1. Receive multiparcer form data the video in the request
+ * 2. Pass the stream to pinata cloud via multiform part data
+*/
+
 async function uploadMainContent(content) {
   return new Promise((resolve) => {
     setTimeout(() => {
@@ -129,7 +142,7 @@ async function uploadMainContent(content) {
   });
 }
 
-async function uploadShortVideoMetadata(payload: ) {
+async function uploadShortVideoMetadata(payload) {
   if (!body || typeof body !== "object") {
     return res.status(400).json({ error: "Body must be a JSON object" });
   }
