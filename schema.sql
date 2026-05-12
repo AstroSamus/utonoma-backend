@@ -20,4 +20,4 @@ CREATE TABLE IF NOT EXISTS public.upload_sessions
     CHECK (
         creator_address ~ '^0x[a-fA-F0-9]{40}$'
     )
-)
+);
