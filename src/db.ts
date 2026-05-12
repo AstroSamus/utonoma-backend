@@ -1,7 +1,6 @@
-import { Pool } from "pg";
+import { Pool, QueryResultRow } from "pg";
 import dotenv from "dotenv";
 import logger from "./infrastructure/logger";
-
 
 dotenv.config();
 
@@ -44,7 +43,7 @@ pool.on("error", (err) => {
 });
 
 
-export async function query<T = unknown>(text: string, params?: unknown[]): Promise<{ rows: T[]}> {
+export async function query<T extends QueryResultRow = any>(text: string, params?: unknown[]): Promise<{ rows: T[]}> {
   try {
     const result = await pool.query<T>(text, params)
     return { rows: result.rows };
