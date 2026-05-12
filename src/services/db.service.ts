@@ -2,7 +2,10 @@ import {
   PendingUploadRow, 
   UploadUidRow , 
   query, 
-  UploadStatus } from "../db";
+  UploadStatus ,
+  UploadSessionRow,
+  UploadSessionUidRow
+} from "../db";
 import {CreatePendingUploadParams} from '../types'
 import logger from "../infrastructure/logger";
 
@@ -73,4 +76,19 @@ export async function updateContentCid(uid: number, contentCid?: string) {
     WHERE uid=${uid};
   `)
   return rows[0];
+}
+
+async function createUploadSession(
+  creatorAddress: string
+): Promise<UploadSessionUidRow> {
+  const { rows } = await query<UploadSessionRow>(`
+    INSERT INTO public.upload_sessions (creator_address)
+    VALUES ($1)
+    RETURNING uid;
+  `, [creatorAddress])
+  return rows[0]
+}
+
+export const db = {
+  createUploadSession
 }
