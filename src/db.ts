@@ -19,6 +19,18 @@ export interface PendingUploadRow {
 
 export interface UploadUidRow { uid: number };
 
+/**
+ * Types for upload_sessions table
+ */
+export interface UploadSessionRow {
+  uid: number
+  creator_address: string
+  started_at: string
+  content_uris: unknown | null
+}
+export interface UploadSessionUidRow { uid: number }
+
+
 const pool = new Pool({
   host: process.env.PG_HOST,
   port: Number(process.env.PG_PORT ?? 5432),
