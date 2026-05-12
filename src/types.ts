@@ -73,3 +73,12 @@ export interface CodecInfo {
   codecType: string | null
   formatName: string | null
 }
+
+export type ApiError = {
+  code: string
+  message: string
+}
+
+export type ApiResponse<T> = {
+  data?: T
+}
