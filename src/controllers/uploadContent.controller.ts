@@ -1,12 +1,12 @@
 import { Request, Response } from 'express'
 import { ethers } from 'ethers'
 
-type CreateWalletBody = {
-  ownerAddress: string
+type CreateUploadSessionBody = {
+  creatorAddress: string
 }
 
 
-function isCreateUploadSesionBody(value: unknown): value is CreateWalletBody {
+function isCreateUploadSessionBody(value: unknown): value is CreateUploadSessionBody {
   if (typeof value !== 'object' || value === null) {
     return false
   }
