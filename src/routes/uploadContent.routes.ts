@@ -1,8 +1,8 @@
 import express from 'express'
-import { createUploadSesion } from '../controllers/uploadContent.controller'
+import { createUploadSession } from '../controllers/uploadContent.controller'
 
 const router = express.Router()
 
-router.post('/create-upload-sesion', createUploadSesion)
+router.post('/create-upload-session', createUploadSession)
 
 export default router
