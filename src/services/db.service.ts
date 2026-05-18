@@ -89,6 +89,18 @@ async function createUploadSession(
   return rows[0]
 }
 
+async function getUploadSession(
+  sessionId: number
+) : Promise<UploadSessionRow | null> {
+  const { rows } = await query<UploadSessionRow>(`
+    SELECT *
+    FROM public.upload_sessions 
+    WHERE uid = $1;
+  `, [sessionId])
+  return rows[0]
+}
+
 export const db = {
-  createUploadSession
+  createUploadSession,
+  getUploadSession
 }
