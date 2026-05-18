@@ -1,8 +1,12 @@
 import express from 'express'
-import { createUploadSession } from '../controllers/uploadContent.controller'
+import { 
+  createUploadSession,
+  subToProgressUpdates
+} from '../controllers/uploadContent.controller'
 
 const router = express.Router()
 
 router.post('/create-upload-session', createUploadSession)
+router.get('/:sessionId/progress-updates', subToProgressUpdates)
 
 export default router
