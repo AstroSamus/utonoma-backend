@@ -16,8 +16,9 @@ CREATE TABLE IF NOT EXISTS public.upload_sessions
     creator_address character(42) NOT NULL,
     started_at timestamptz NOT NULL DEFAULT now(),
     content_uris jsonb
-
     CHECK (
         creator_address ~ '^0x[a-fA-F0-9]{40}$'
-    )
+    ),
+    status text NOT NULL DEFAULT 'ACTIVE'
+        CHECK (status IN ('ACTIVE', 'COMPLETED', 'EXPIRED'))
 );

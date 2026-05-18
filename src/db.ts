@@ -21,11 +21,15 @@ export interface UploadUidRow { uid: number };
 /**
  * Types for upload_sessions table
  */
+
+export type UploadSessionStatus = 'ACTIVE' | 'COMPLETED' | 'EXPIRED'
+
 export interface UploadSessionRow {
   uid: number
   creator_address: string
   started_at: string
   content_uris: unknown | null
+  status: UploadSessionStatus
 }
 export interface UploadSessionUidRow { uid: number }
 
