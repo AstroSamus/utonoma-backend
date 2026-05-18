@@ -25,3 +25,16 @@ psql -h localhost -U myuser -d mydb -f schema.sql
 
 6. run with npm run dev 
 do not forget to run "sudo systemctl start postgresql" to start the postresql server
+
+
+### Entity - Relation diagram
+
+```mermaid
+    Upload Session {
+        uuid id PK
+        string creatorAddress FK
+        date startedAt
+        json contentUris
+        status
+    }
+```
