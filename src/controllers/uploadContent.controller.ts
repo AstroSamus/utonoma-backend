@@ -39,7 +39,7 @@ export const createUploadSession = async (req: Request, res: Response) => {
     const response: ApiResponse<{uploadSessionId: number}> = {
       data: { uploadSessionId }
     }
-    res.status(200).json({ response })
+    res.status(200).json(response)
   }
   catch(error) {
     console.error('Error creating upload session', error)
