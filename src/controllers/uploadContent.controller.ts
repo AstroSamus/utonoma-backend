@@ -5,7 +5,12 @@ import {
   ApiResponse,
   ApiError
 } from '../types'
-import { UploadSessionUidRow } from '../db'
+import Busboy from 'busboy'
+import { createWriteStream } from 'fs'
+import path from 'path'
+import { randomUUID } from 'crypto'
+import os from 'os'
+import { pipeline } from 'stream/promises'
 
 type CreateUploadSessionBody = {
   creatorAddress: string
@@ -109,4 +114,68 @@ export const subToProgressUpdates = async (
     }
     return res.status(400).json(response)  
   }
+}
+
+
+export const uploadShortVideo = async (
+  req: Request<{ sessionId: string }>, 
+  res: Response
+) => {
+  //validate multipart form data
+  const contentType = req.headers['content-type'] || ''
+  if (!contentType.includes('multipart/form-data')) {
+    const error: ApiError = { 
+      code: 'ERROR_INVALID_CONTENT_TYPE',
+      message: 'Invalid content type. Expected multipart/form-data.'
+    }
+    return res.status(415).json(error)
+  }
+
+  //validate that upload session id exists
+  const { sessionId } = req.params
+  const sessionIdNumber = Number(sessionId)
+  if(!sessionIdNumber) {
+    const response: ApiError = {
+      code: 'ERROR_INVALID_REQUEST_PARAMS_SESSION_ID',
+      message: 'Invalid request parameters. "sessionId" must be a valid number.'
+    }
+    return res.status(400).json(response)  
+  }
+  const sessionData = await db.getUploadSession(sessionIdNumber)
+  if(sessionData === null) {
+    const response: ApiError = {
+      code: 'ERROR_UPLOAD_SESSION_NOT_FOUND',
+      message: 'Upload session not found.'
+    }
+    return res.status(404).json(response)  
+  }
+
+  //parse 
+  const busboy = Busboy({
+    headers: req.headers,
+    limits: {
+      files: 1,
+      fileSize: 500 * 1024 * 1024 //500 MB
+    }
+  })
+
+  
+  busboy.on('file', async(name, stream, info) => {
+    const tempPath = path.join(os.tmpdir(), randomUUID() + path.extname(info.filename))
+
+    try {
+      const videoStream = createWriteStream(tempPath)
+      await pipeline(stream, videoStream)
+      stream.pipe(videoStream)
+    } catch (error) {
+      return res.send(500).json({ error: 'Upload failed' })
+    }
+  })
+
+  busboy.on('finish', () => {
+    res.send(400)
+  })
+
+  req.pipe(busboy)
+
 }
