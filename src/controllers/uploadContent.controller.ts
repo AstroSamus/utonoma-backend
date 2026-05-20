@@ -6,11 +6,16 @@ import {
   ApiError
 } from '../types'
 import Busboy from 'busboy'
-import { createWriteStream } from 'fs'
+import { 
+  createWriteStream,
+  unlink
+} from 'fs'
 import path from 'path'
 import { randomUUID } from 'crypto'
 import os from 'os'
 import { pipeline } from 'stream/promises'
+import { videoUtils } from '../utils/videoUtils'
+import { logger } from '../infrastructure/logger'
 
 type CreateUploadSessionBody = {
   creatorAddress: string
@@ -125,7 +130,7 @@ export const uploadShortVideo = async (
   const contentType = req.headers['content-type'] || ''
   if (!contentType.includes('multipart/form-data')) {
     const error: ApiError = { 
-      code: 'ERROR_INVALID_CONTENT_TYPE',
+      code: 'ERROR_EXPECTED_MULTIPART_FORM_DATA',
       message: 'Invalid content type. Expected multipart/form-data.'
     }
     return res.status(415).json(error)
@@ -159,21 +164,71 @@ export const uploadShortVideo = async (
     }
   })
 
-  
-  busboy.on('file', async(name, stream, info) => {
-    const tempPath = path.join(os.tmpdir(), randomUUID() + path.extname(info.filename))
-
-    try {
-      const videoStream = createWriteStream(tempPath)
-      await pipeline(stream, videoStream)
-      stream.pipe(videoStream)
-    } catch (error) {
-      return res.send(500).json({ error: 'Upload failed' })
+  //save file
+  busboy.on('file', (name, stream, info) => {
+    //validate file extension
+    if(!videoUtils.isValidVideoMimeType(info?.mimeType)) {
+      stream.resume() //discards the stream
+      const errorResp: ApiError = { 
+        code: 'ERROR_INVALID_CONTENT_TYPE',
+        message: 'Expected file to be in the allowed video types'
+      }
+      return res.status(404).json(errorResp) 
     }
-  })
 
-  busboy.on('finish', () => {
-    res.send(400)
+    //save and detect valid video
+    const tempPath = path.join(os.tmpdir(), randomUUID() + path.extname(info.filename))
+    const videoStream = createWriteStream(tempPath)
+    pipeline(stream, videoStream).then(async() => {
+      const actualVideoInfo = await videoUtils.getActualVideoInfo(tempPath)
+      if(actualVideoInfo.duration > 60) {
+        const errorResp: ApiError = { 
+          code: 'ERROR_VIDEO_TOO_LONG',
+          message: 'Too long for a short video'
+        }
+        return res.status(400).json(errorResp) 
+      }
+      else if(!actualVideoInfo.isValid) {
+        //delete the invalid file
+        unlink(tempPath, (err) => {
+          if(err) logger.error({err}, 'error when deleting video')
+        })
+        const errorResp: ApiError = { 
+          code: 'ERROR_INVALID_VIDEO',
+          message: 'File provided is not a video'
+        }
+        return res.status(400).json(errorResp) 
+      }
+      else {
+        //to do: update the entry on db for this upload session with the content uri
+        const response: ApiResponse<{status: string}> = {
+          data: { status: 'ok' }
+        }
+        res.status(200).json(response)
+      }
+    }).catch((error) => {
+      logger.error({error}, 'error when uploading video')
+      const errorResp: ApiError = { 
+        code: 'UNKNOWN_ERROR',
+        message: 'Unknown error when uploading file'
+      }
+      return res.status(404).json(errorResp) 
+      
+    })
+
+    stream.on('limit', () => {
+      stream.unpipe()
+      stream.resume()
+      //delete partial file
+      unlink(tempPath, (err) => {
+        if(err) logger.error(err, 'error when deleting video')
+      })
+      const errorResp: ApiError = { 
+        code: 'ERROR_FILE_TOO_LARGE',
+        message: 'File too large'
+      }
+      return res.status(413).json(errorResp)
+    })
   })
 
   req.pipe(busboy)
