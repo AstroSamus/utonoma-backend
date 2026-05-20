@@ -19,7 +19,14 @@ const ALLOWED_FORMATS = new Set([
   'matroska,webm',
 ])
 
-export function getActualVideoInfo(filePath: string): Promise<GetActualVideoInfoResult> {
+const ALLOWED_VIDEO_TYPES = new Set([
+  'video/mp4',
+  'video/webm',
+  'video/quicktime',
+  'video/x-matroska'
+])
+
+function getActualVideoInfo(filePath: string): Promise<GetActualVideoInfoResult> {
   return new Promise((resolve, reject) => {
     const args = [
       '-v', 'error',
@@ -123,4 +130,9 @@ export function isValidVideo( metadata: CodecInfo ) : boolean {
   }
 
   return true
+}
+
+function isValidVideoMimeType(mimeType: string) : boolean {
+  if(ALLOWED_VIDEO_TYPES.has(mimeType)) return true
+  return false
 }
