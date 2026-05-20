@@ -3,7 +3,7 @@ import {
   GetActualVideoInfoResult, 
   CodecInfo
  } from '../types'
-import logger from '../infrastructure/logger'
+import { logger } from '../infrastructure/logger'
 
 
 const ALLOWED_VIDEO_CODECS = new Set([
@@ -103,7 +103,7 @@ function getActualVideoInfo(filePath: string): Promise<GetActualVideoInfoResult>
   })
 } 
 
-export function isValidVideo( metadata: CodecInfo ) : boolean {
+function isValidVideo( metadata: CodecInfo ) : boolean {
   if(!metadata?.codecType || metadata.codecType !== 'video') {
     logger.info(`Stream codec_type is not video: ${metadata?.codecType}`)
     return false
@@ -135,4 +135,9 @@ export function isValidVideo( metadata: CodecInfo ) : boolean {
 function isValidVideoMimeType(mimeType: string) : boolean {
   if(ALLOWED_VIDEO_TYPES.has(mimeType)) return true
   return false
+}
+
+export const videoUtils = {
+  isValidVideoMimeType,
+  getActualVideoInfo
 }
