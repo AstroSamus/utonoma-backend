@@ -78,11 +78,20 @@ Rel(api, frontend, "Sends progress updates and IPFS CIDs", "Server-Sent Events")
 
 ```mermaid
 erDiagram
+    UPLOAD_SESSION ||--o| SHORT_VIDEO : creates
     UPLOAD_SESSION {
         uuid id PK
         string creatorAddress FK
         date startedAt
-        json contentUris
         string status
+    }
+    SHORT_VIDEO {
+        uuid uploadSessionId PK
+        string shortVideoOriginal
+        string shortVideoStandarized
+        string shortVideoMidRes
+        string shortVideoLowRes
+        bool isShortVideoCopyrightFree
+        bool isShortVideodExplicitFree
     }
 ```
