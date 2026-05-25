@@ -25,7 +25,7 @@ export interface UploadUidRow { uid: number };
 export type UploadSessionStatus = 'ACTIVE' | 'COMPLETED' | 'EXPIRED'
 
 export interface UploadSessionRow {
-  uid: number
+  uid: string
   creator_address: string
   started_at: string
   content_uris: unknown | null
