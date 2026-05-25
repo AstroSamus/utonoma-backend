@@ -4,7 +4,8 @@ import {
   query, 
   UploadStatus ,
   UploadSessionRow,
-  UploadSessionUidRow
+  UploadSessionUidRow,
+  ShortVideoRow
 } from "../db";
 import {CreatePendingUploadParams} from '../types'
 import logger from "../infrastructure/logger";
@@ -21,16 +22,18 @@ import logger from "../infrastructure/logger";
      })
  * 
  */
+//Chore: This table desapeared in the new Api so you should delete this method as there is no usage
 export async function createPendingUpload(
   params: CreatePendingUploadParams
 ): Promise<PendingUploadRow> {
   const { rows } = await query<PendingUploadRow>(`
     INSERT INTO public.uploads (
       content_cid, metadata_cid, extra_cids
-      ) VALUES (
-        '${params.content_cid}', '${params.metadata_cid}', '${params.extra_cids? JSON.stringify(params.extra_cids): null }'
-      )
-  `)
+      ) VALUES ($1, $2, $3)
+  `, [
+    params.metadata_cid,
+    params.extra_cids? JSON.stringify(params.extra_cids): null
+  ])
   return rows[0];
 }
 
@@ -100,7 +103,23 @@ async function getUploadSession(
   return rows[0]
 }
 
+async function upsertShortVideo(
+  sessionId: string,
+  shortVideoUri: string
+) : Promise<ShortVideoRow> {
+  const { rows } = await query<ShortVideoRow>(`
+    INSERT INTO public.short_videos
+    (upload_session_id, original)
+    VALUES($1, $2)
+    ON CONFLICT (upload_session_id)
+    DO UPDATE SET original = EXCLUDED.original
+    RETURNING *
+  `, [sessionId, shortVideoUri])
+  return rows[0]
+}
+
 export const db = {
   createUploadSession,
-  getUploadSession
+  getUploadSession,
+  upsertShortVideo
 }
