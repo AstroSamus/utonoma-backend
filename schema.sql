@@ -18,8 +18,17 @@ CREATE TABLE IF NOT EXISTS public.upload_sessions
         creator_address ~ '^0x[a-fA-F0-9]{40}$'
     ),
     started_at timestamptz NOT NULL DEFAULT now(),
-    content_uris jsonb
     status text NOT NULL DEFAULT 'ACTIVE'
     CHECK (status IN ('ACTIVE', 'COMPLETED', 'EXPIRED'))
+);
 
+CREATE TABLE IF NOT EXISTS public.short_videos
+(
+    upload_session_id UUID PRIMARY KEY,
+    original text NOT NULL,
+    standarized text,
+    mid_res text,
+    low_res text,
+    is_copyright_free boolean,
+    is_explicit_free boolean
 );
