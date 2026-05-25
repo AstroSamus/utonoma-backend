@@ -31,8 +31,17 @@ export interface UploadSessionRow {
   content_uris: unknown | null
   status: UploadSessionStatus
 }
-export interface UploadSessionUidRow { uid: number }
+export interface UploadSessionUidRow { uid: string }
 
+export interface ShortVideoRow {
+  upload_session_id: string
+  original: string
+  standarized: string | null
+  mid_res: string | null
+  low_res: string | null
+  is_copyright_free: boolean | null
+  is_explicit_free: boolean | null
+}
 
 const pool = new Pool({
   host: process.env.PG_HOST,
