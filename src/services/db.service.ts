@@ -90,7 +90,7 @@ async function createUploadSession(
 }
 
 async function getUploadSession(
-  sessionId: number
+  sessionId: string
 ) : Promise<UploadSessionRow | null> {
   const { rows } = await query<UploadSessionRow>(`
     SELECT *
