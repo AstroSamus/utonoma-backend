@@ -138,15 +138,14 @@ export const uploadShortVideo = async (
 
   //validate that upload session id exists
   const { sessionId } = req.params
-  const sessionIdNumber = Number(sessionId)
-  if(!sessionIdNumber) {
+  if(!sessionId || typeof(sessionId) !== 'string') {
     const response: ApiError = {
       code: 'ERROR_INVALID_REQUEST_PARAMS_SESSION_ID',
-      message: 'Invalid request parameters. "sessionId" must be a valid number.'
+      message: 'Invalid request parameters. "sessionId" must be a valid UUID string.'
     }
     return res.status(400).json(response)  
   }
-  const sessionData = await db.getUploadSession(sessionIdNumber)
+  const sessionData = await db.getUploadSession(sessionId)
   if(sessionData === null) {
     const response: ApiError = {
       code: 'ERROR_UPLOAD_SESSION_NOT_FOUND',
@@ -201,10 +200,14 @@ export const uploadShortVideo = async (
       }
       else {
         //to do: update the entry on db for this upload session with the content uri
+        await db.upsertShortVideo(
+          sessionId,
+          tempPath
+        )
         const response: ApiResponse<{status: string}> = {
           data: { status: 'ok' }
         }
-        res.status(200).json(response)
+        return res.status(200).json(response)
       }
     }).catch((error) => {
       logger.error({error}, 'error when uploading video')
