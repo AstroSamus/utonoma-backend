@@ -7,8 +7,8 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "ts-node-dev --respawn --transpile-only src/improvedServert.ts",
-    "newDev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "dev": "ts-node-dev --respawn --transpile-only api/improvedServert.ts",
+    "newDev": "ts-node-dev --respawn --transpile-only api/server.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
