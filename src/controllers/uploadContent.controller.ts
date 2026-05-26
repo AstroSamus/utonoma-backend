@@ -67,17 +67,16 @@ export const subToProgressUpdates = async (
   res: Response
 ) => {
   const { sessionId } = req.params
-  const sessionIdNumber = Number(sessionId)
 
-  if(!sessionIdNumber) {
+  if(!sessionId) {
     const response: ApiError = {
       code: 'ERROR_INVALID_REQUEST_PARAMS_SESSION_ID',
-      message: 'Invalid request parameters. "sessionId" must be a valid number.'
+      message: 'Invalid request parameters. "sessionId" must be provided.'
     }
     return res.status(400).json(response)  
   }
 
-  const sessionData = await db.getUploadSession(sessionIdNumber)
+  const sessionData = await db.getUploadSession(sessionId)
 
   if(sessionData === null) {
     const response: ApiError = {
