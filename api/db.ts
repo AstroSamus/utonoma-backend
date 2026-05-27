@@ -31,7 +31,7 @@ export interface UploadSessionRow {
   content_uris: unknown | null
   status: UploadSessionStatus
 }
-export interface UploadSessionUidRow { uid: number }
+export interface UploadSessionUidRow { uid: string }
 
 export interface ShortVideoRow {
   upload_session_id: string
