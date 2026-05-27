@@ -10,6 +10,7 @@
     "start": "node index.js",
     "dev": "ts-node-dev --respawn --transpile-only api/improvedServert.ts",
     "newDev": "ts-node-dev --respawn --transpile-only api/server.ts",
+    "workers": "node workers/video.worker.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {

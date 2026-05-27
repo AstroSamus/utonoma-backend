@@ -1,10 +1,10 @@
 import { Request, Response } from 'express'
 import { ethers } from 'ethers'
-import { db } from '../services/db.service'
+import { db } from '../services/db.service.js'
 import { 
   ApiResponse,
   ApiError
-} from '../types'
+} from '../types.js'
 import Busboy from 'busboy'
 import { 
   createWriteStream,
@@ -14,8 +14,11 @@ import path from 'path'
 import { randomUUID } from 'crypto'
 import os from 'os'
 import { pipeline } from 'stream/promises'
-import { videoUtils } from '../utils/videoUtils'
-import { logger } from '../infrastructure/logger'
+import { videoUtils } from '../utils/videoUtils.js'
+import { logger } from '../infrastructure/logger.js'
+import {
+  videoQueue
+} from '../../queue/video.queue.js'
 
 type CreateUploadSessionBody = {
   creatorAddress: string
@@ -47,7 +50,7 @@ export const createUploadSession = async (req: Request, res: Response) => {
   try {
     const { uid: uploadSessionId } = await db.createUploadSession(req.body.creatorAddress)
 
-    const response: ApiResponse<{uploadSessionId: number}> = {
+    const response: ApiResponse<{uploadSessionId: string}> = {
       data: { uploadSessionId }
     }
     res.status(200).json(response)
@@ -202,6 +205,12 @@ export const uploadShortVideo = async (
         await db.upsertShortVideo(
           sessionId,
           tempPath
+        )
+        const job = await videoQueue.add(
+          'convert-video',
+          {
+            sessionId,
+          },
         )
         const response: ApiResponse<{status: string}> = {
           data: { status: 'ok' }
