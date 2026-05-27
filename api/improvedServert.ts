@@ -1,18 +1,18 @@
 import express, { json, Request, Response } from "express";
 import dotenv from "dotenv"
-import { PendingUploadRow, query } from "./db";
+import { PendingUploadRow, query } from "./db.js";
 import {
   createPendingUpload,
   updateUploadStatus,
   createUploadEntryWithNoData
-} from './services/db.service'
+} from './services/db.service.js'
 import {
   VideoMetadata, 
   PinataPinJsonPayload, 
   PinataPinJsonResponse,
   isPinataPinJsonResponse
-} from './types'
-import { uploadVideoToIpfsController } from "./controllers/Ipfs.controller";
+} from './types.js'
+import { uploadVideoToIpfsController } from "./controllers/Ipfs.controller.js";
 
 
 dotenv.config();

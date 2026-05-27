@@ -5,23 +5,23 @@ import {
   VideoMetadata,
   UploadVideoToIpfsResponse,
   PinataPinJsonResponse
-} from '../types'
+} from '../types.js'
 import {
   uploadJsonToIpfsService,
   uploadVideoToIpfsService
-} from '../services/ipfs.service'
+} from '../services/ipfs.service.js'
 import { 
   createUploadEntryWithNoData,
   updateUploadStatus,
   updateMetadataCid,
   updateContentCid
-} from '../services/db.service'
-import logger from "../infrastructure/logger"
+} from '../services/db.service.js'
+import { logger } from "../infrastructure/logger.js"
 import { createWriteStream } from 'fs';
 import path from 'path';
 import { randomUUID } from 'crypto';
 import { pipeline } from 'stream/promises';
-import { getActualVideoInfo } from '../utils/videoUtils';
+import { videoUtils } from '../utils/videoUtils.js';
 
 const ALLOWED_VIDEO_TYPES = new Set([
   'video/mp4',
@@ -105,7 +105,7 @@ export async function uploadVideoToIpfsController(req: Request, res: Response) {
 
     try {
       await pipeline(fileStream, writeStream)
-      const actualVideoInfo = await getActualVideoInfo(tempPath)
+      const actualVideoInfo = await videoUtils.getActualVideoInfo(tempPath)
       if(!actualVideoInfo.isValid) {
         //delete the video from tmp
         return respondOnce(500, { error: 'Upload failed' })

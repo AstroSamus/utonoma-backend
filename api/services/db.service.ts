@@ -6,9 +6,8 @@ import {
   UploadSessionRow,
   UploadSessionUidRow,
   ShortVideoRow
-} from "../db";
-import {CreatePendingUploadParams} from '../types'
-import logger from "../infrastructure/logger";
+} from "../db.js";
+import { CreatePendingUploadParams } from '../types.js'
 
 /**
  * Usage sample:

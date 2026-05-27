@@ -2,8 +2,8 @@ import { spawn } from 'child_process'
 import { 
   GetActualVideoInfoResult, 
   CodecInfo
- } from '../types'
-import { logger } from '../infrastructure/logger'
+ } from '../types.js'
+import { logger } from '../infrastructure/logger.js'
 
 
 const ALLOWED_VIDEO_CODECS = new Set([

@@ -3,7 +3,7 @@ import {
   createUploadSession,
   subToProgressUpdates,
   uploadShortVideo
-} from '../controllers/uploadContent.controller'
+} from '../controllers/uploadContent.controller.js'
 
 const router = express.Router()
 

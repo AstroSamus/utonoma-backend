@@ -1,6 +1,6 @@
 import { Pool, QueryResultRow } from "pg";
 import dotenv from "dotenv";
-import logger from "./infrastructure/logger";
+import { logger } from "./infrastructure/logger.js";
 
 dotenv.config();
 
