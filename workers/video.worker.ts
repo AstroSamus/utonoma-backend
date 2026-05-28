@@ -1,8 +1,13 @@
 import { Worker } from 'bullmq'
+import { db } from '../api/services/db.service.js'
+import { videoUtils } from '../api/utils/videoUtils.js'
+import path from 'path'
+import os from 'os'
+import { randomUUID } from 'crypto'
 
 import {
-    videoQueueConnection,
-    VIDEO_QUEUE_NAME
+  videoQueueConnection,
+  VIDEO_QUEUE_NAME
 } from '../queue/video.queue.js'
 
 const worker = new Worker(
@@ -12,16 +17,34 @@ const worker = new Worker(
     console.log('Job name:', job.name);
     console.log('Job data:', job.data);
 
-    // Simulamos procesamiento pesado
-    await new Promise((resolve) => setTimeout(resolve, 10000));
+    const shortVideoInfo = await db.getShortVideo(job.data.sessionId)
+    const uploadSessionInfo = await db.getUploadSession(job.data.sessionId)
+    if(!shortVideoInfo || !shortVideoInfo?.original) {
+      throw new Error(`No information about ${job.data.sessionId}, cannot process task.`)
+      //to do: mark upload session as expired on db
 
-    console.log('Job completed:', job.id);
+    }
+    if(uploadSessionInfo?.status === 'EXPIRED' || uploadSessionInfo?.status === 'COMPLETED') {
+      throw new Error(`Upload session ${job.data.sessionId} is expired, cannot process task.`)
+    }
 
-    return {
-      message: 'Video processed successfully',
-      jobId: job.id,
-      processedAt: new Date().toISOString(),
-    };
+
+    const outputFileName = path.join(os.tmpdir(), randomUUID())
+
+    const [error, isConverted] = await videoUtils.convertToWebM(
+      shortVideoInfo.original, 
+      outputFileName,
+      (progress) => {
+        if(progress) console.log(progress)
+      }
+    )
+
+    //3. Store the output in db
+    if(error || !isConverted) {
+      throw new Error(`Error converting video for session ${job.data.sessionId}: ${error?.message}`)
+    } else {
+      console.log('Job completed file is stored in:', outputFileName)      
+    }
   },
   {
     connection: videoQueueConnection,
