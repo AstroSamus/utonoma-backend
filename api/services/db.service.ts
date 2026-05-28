@@ -117,8 +117,17 @@ async function upsertShortVideo(
   return rows[0]
 }
 
+async function getShortVideo(sessionId: string) : Promise<ShortVideoRow | null> {
+  const { rows } = await query<ShortVideoRow>(`
+    SELECT * FROM public.short_videos
+    WHERE upload_session_id = $1    
+  `, [sessionId])
+  return rows[0]
+}
+
 export const db = {
   createUploadSession,
   getUploadSession,
-  upsertShortVideo
+  upsertShortVideo,
+  getShortVideo
 }
