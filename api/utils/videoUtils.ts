@@ -5,7 +5,6 @@ import {
  } from '../types.js'
 import { logger } from '../infrastructure/logger.js'
 
-
 const ALLOWED_VIDEO_CODECS = new Set([
   'h264',
   'hevc',
@@ -103,6 +102,47 @@ function getActualVideoInfo(filePath: string): Promise<GetActualVideoInfoResult>
   })
 } 
 
+function convertToWebM(
+  inputPath: string,
+  outputPath: string,
+  progressCallback?: (progress: string) => void
+): Promise<[Error | null, boolean]> {
+  return new Promise((resolve) => {
+    const args = [
+      '-i', inputPath,
+      '-c:v', 'libvpx-vp9',
+      '-crf', '30',
+      '-b:v', '0',
+      '-row-mt', '1',
+      '-threads', '4',
+      '-c:a', 'libopus',
+      outputPath + '.webm'
+    ]
+
+    const ffmpeg = spawn('ffmpeg', args)
+
+    ffmpeg.on('error', (err) => {
+      resolve([new Error(`ffmpeg error: ${err.message}`), false])
+    })
+    
+    if(progressCallback) {
+      ffmpeg.stderr.on('data', data => {
+        const dataStr = data.toString()
+        const time = dataStr.match(/time=(\d{2}:\d{2}:\d{2}\.\d{2})/)?.[1] || null
+        if(time) progressCallback(time)
+      }) 
+    }
+
+    ffmpeg.on('close', code => {
+      if (code === 0) {
+        resolve([null, true]);
+      } else {
+        resolve([new Error(`ffmpeg exited with code ${code}`), false]);
+      }
+    })
+  })
+}
+
 function isValidVideo( metadata: CodecInfo ) : boolean {
   if(!metadata?.codecType || metadata.codecType !== 'video') {
     logger.info(`Stream codec_type is not video: ${metadata?.codecType}`)
@@ -139,5 +179,6 @@ function isValidVideoMimeType(mimeType: string) : boolean {
 
 export const videoUtils = {
   isValidVideoMimeType,
-  getActualVideoInfo
+  getActualVideoInfo,
+  convertToWebM,
 }
