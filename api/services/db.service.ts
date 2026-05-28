@@ -125,9 +125,21 @@ async function getShortVideo(sessionId: string) : Promise<ShortVideoRow | null> 
   return rows[0]
 }
 
+async function updateShortVideoStandardized(
+  sessionId: string, 
+  standardizedVideoUri: string
+) : Promise<void> {
+  await query(`
+    UPDATE public.short_videos
+    SET standarized = $2
+    WHERE upload_session_id = $1
+  `, [sessionId, standardizedVideoUri])
+}
+
 export const db = {
   createUploadSession,
   getUploadSession,
   upsertShortVideo,
-  getShortVideo
+  getShortVideo,
+  updateShortVideoStandardized
 }
