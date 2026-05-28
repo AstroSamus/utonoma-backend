@@ -12,4 +12,4 @@ app.use(express.json())
 
 app.use('/upload-content', uploadContentRoutes)
 
-export default app
+export { app }
