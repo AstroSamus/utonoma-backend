@@ -39,16 +39,20 @@ const worker = new Worker(
       }
     )
 
-    //3. Store the output in db
+    //Store the output in db
     if(error || !isConverted) {
       throw new Error(`Error converting video for session ${job.data.sessionId}: ${error?.message}`)
     } else {
-      console.log('Job completed file is stored in:', outputFileName)      
+      try{
+        await db.updateShortVideoStandardized(job.data.sessionId, outputFileName)
+      } catch(err) {
+        throw new Error(`Error updating database for session ${job.data.sessionId}: ${err instanceof Error ? err.message : String(err)}`)
+      }
     }
   },
   {
     connection: videoQueueConnection,
-    concurrency: 1,
+    concurrency: 2,
   }
 )
 
