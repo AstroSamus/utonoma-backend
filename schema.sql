@@ -37,3 +37,21 @@ CREATE TABLE IF NOT EXISTS public.short_videos
     status text NOT NULL DEFAULT 'PENDING'
         CHECK(status IN ('PENDING', 'COMPLETED', 'FAILED'))
 );
+
+CREATE OR REPLACE FUNCTION update_short_video_status()
+RETURNS trigger AS $$
+BEGIN
+    IF NEW.standardized IS NOT NULL
+        AND NEW.standardized_cid IS NOT NULL
+        AND OLD.status = 'PENDING'
+    THEN
+        NEW.status := 'COMPLETED';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_update_short_video_status
+BEFORE UPDATE ON public.short_videos
+FOR EACH ROW
+EXECUTE FUNCTION update_short_video_status();
