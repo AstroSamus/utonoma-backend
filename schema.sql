@@ -26,9 +26,14 @@ CREATE TABLE IF NOT EXISTS public.short_videos
 (
     upload_session_id UUID PRIMARY KEY,
     original text NOT NULL,
-    standarized text,
+    standardized text,
+    standardized_cid varchar(66),
     mid_res text,
+    mid_res_cid varchar(66),
     low_res text,
+    low_res_cid varchar(66),
     is_copyright_free boolean,
-    is_explicit_free boolean
+    is_explicit_free boolean,
+    status text NOT NULL DEFAULT 'PENDING'
+        CHECK(status IN ('PENDING', 'PROCESSED', 'FAILED'))
 );
