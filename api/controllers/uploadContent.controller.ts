@@ -148,7 +148,7 @@ export const uploadShortVideo = async (
     return res.status(400).json(response)  
   }
   const sessionData = await db.getUploadSession(sessionId)
-  if(sessionData === null) {
+  if(!sessionData) {
     const response: ApiError = {
       code: 'ERROR_UPLOAD_SESSION_NOT_FOUND',
       message: 'Upload session not found.'
@@ -201,7 +201,6 @@ export const uploadShortVideo = async (
         return res.status(400).json(errorResp) 
       }
       else {
-        //to do: update the entry on db for this upload session with the content uri
         await db.upsertShortVideo(
           sessionId,
           tempPath
