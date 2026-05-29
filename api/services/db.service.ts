@@ -6,8 +6,8 @@ import {
   UploadSessionRow,
   UploadSessionUidRow,
   ShortVideoRow
-} from "../db.js";
-import { CreatePendingUploadParams } from '../types.js'
+} from '../db.js'
+import { Bytes32, CreatePendingUploadParams } from '../types.js'
 
 /**
  * Usage sample:
@@ -127,13 +127,14 @@ async function getShortVideo(sessionId: string) : Promise<ShortVideoRow | null> 
 
 async function updateShortVideoStandardized(
   sessionId: string, 
-  standardizedVideoUri: string
+  standardizedVideoUri: string,
+  standardizedVideoCid: Bytes32
 ) : Promise<void> {
   await query(`
     UPDATE public.short_videos
-    SET standarized = $2
+    SET standardized = $2, standardized_cid = $3
     WHERE upload_session_id = $1
-  `, [sessionId, standardizedVideoUri])
+  `, [sessionId, standardizedVideoUri, standardizedVideoCid])
 }
 
 export const db = {
