@@ -116,8 +116,9 @@ function convertToWebM(
       '-row-mt', '1',
       '-threads', '4',
       '-c:a', 'libopus',
-      outputPath + '.webm'
-    ]
+      outputPath
+      // do not forget to include the file extension on the output path
+    ] 
 
     const ffmpeg = spawn('ffmpeg', args)
 
