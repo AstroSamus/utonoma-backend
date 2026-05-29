@@ -82,3 +82,7 @@ export type ApiError = {
 export type ApiResponse<T> = {
   data?: T
 }
+
+export type Bytes32 = `0x${string}` & {
+    readonly __brand: 'Bytes32'
+  }
