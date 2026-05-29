@@ -88,10 +88,11 @@ erDiagram
     SHORT_VIDEO {
         uuid uploadSessionId PK
         string shortVideoOriginal
-        string shortVideoStandarized
+        string shortVideoStandardized
         string shortVideoMidRes
         string shortVideoLowRes
         bool isShortVideoCopyrightFree
         bool isShortVideodExplicitFree
+        string status
     }
 ```
