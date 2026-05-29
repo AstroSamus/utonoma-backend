@@ -4,11 +4,12 @@ import { videoUtils } from '../api/utils/videoUtils.js'
 import path from 'path'
 import os from 'os'
 import { randomUUID } from 'crypto'
-
+import { simulateIpfsCid } from '../api/utils/ipfs.utils.js'
 import {
   videoQueueConnection,
   VIDEO_QUEUE_NAME
 } from '../queue/video.queue.js'
+import { Bytes32 } from '../api/types.js'
 
 const worker = new Worker(
   VIDEO_QUEUE_NAME,
@@ -29,9 +30,9 @@ const worker = new Worker(
     }
 
 
-    const outputFileName = path.join(os.tmpdir(), randomUUID())
+    const outputFileName = path.join(os.tmpdir(), randomUUID() + '.webm')
 
-    const [error, isConverted] = await videoUtils.convertToWebM(
+    const [convertionError, isConverted] = await videoUtils.convertToWebM(
       shortVideoInfo.original, 
       outputFileName,
       (progress) => {
@@ -39,12 +40,22 @@ const worker = new Worker(
       }
     )
 
+    let standardizedVideoCid: Bytes32 | null = null
+    if(!convertionError) {
+      const [ipfsError, cidAsBytes32] = await simulateIpfsCid(outputFileName)
+      standardizedVideoCid = cidAsBytes32
+    }
+
     //Store the output in db
-    if(error || !isConverted) {
-      throw new Error(`Error converting video for session ${job.data.sessionId}: ${error?.message}`)
+    if(convertionError || !standardizedVideoCid) {
+      throw new Error(`Error converting video for session ${job.data.sessionId}: ${convertionError?.message}`)
     } else {
       try{
-        await db.updateShortVideoStandardized(job.data.sessionId, outputFileName)
+        await db.updateShortVideoStandardized(
+          job.data.sessionId, 
+          outputFileName,
+          standardizedVideoCid
+        )
       } catch(err) {
         throw new Error(`Error updating database for session ${job.data.sessionId}: ${err instanceof Error ? err.message : String(err)}`)
       }
