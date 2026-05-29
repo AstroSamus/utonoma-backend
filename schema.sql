@@ -35,5 +35,5 @@ CREATE TABLE IF NOT EXISTS public.short_videos
     is_copyright_free boolean,
     is_explicit_free boolean,
     status text NOT NULL DEFAULT 'PENDING'
-        CHECK(status IN ('PENDING', 'PROCESSED', 'FAILED'))
+        CHECK(status IN ('PENDING', 'COMPLETED', 'FAILED'))
 );
