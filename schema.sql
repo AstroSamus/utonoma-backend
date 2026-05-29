@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS public.upload_sessions
         creator_address ~ '^0x[a-fA-F0-9]{40}$'
     ),
     started_at timestamptz NOT NULL DEFAULT now(),
+    short_video_completed boolean NOT NULL DEFAULT false,
     status text NOT NULL DEFAULT 'ACTIVE'
     CHECK (status IN ('ACTIVE', 'COMPLETED', 'EXPIRED'))
 );
