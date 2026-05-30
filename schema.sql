@@ -42,9 +42,20 @@ RETURNS trigger AS $$
 BEGIN
     IF NEW.standardized IS NOT NULL
         AND NEW.standardized_cid IS NOT NULL
-        AND OLD.status = 'PENDING'
     THEN
-        NEW.status := 'COMPLETED';
+        UPDATE public.upload_sessions
+        SET short_video_completed = true
+        WHERE uid = NEW.upload_session_id
+            AND short_video_completed IS DISTINCT FROM true;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_update_upload_session_status_from_short_videos
+AFTER UPDATE ON public.short_videos
+FOR EACH ROW
+EXECUTE FUNCTION update_upload_session_status_from_short_videos();
     END IF;
     RETURN NEW;
 END;
