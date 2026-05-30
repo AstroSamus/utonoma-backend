@@ -14,13 +14,13 @@ CREATE TABLE IF NOT EXISTS public.upload_sessions
 (
     uid UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     creator_address character(42) NOT NULL
-    CHECK (
-        creator_address ~ '^0x[a-fA-F0-9]{40}$'
-    ),
+        CHECK (
+            creator_address ~ '^0x[a-fA-F0-9]{40}$'
+        ),
     started_at timestamptz NOT NULL DEFAULT now(),
     short_video_completed boolean NOT NULL DEFAULT false,
     status text NOT NULL DEFAULT 'ACTIVE'
-    CHECK (status IN ('ACTIVE', 'COMPLETED', 'EXPIRED'))
+        CHECK (status IN ('ACTIVE', 'COMPLETED', 'EXPIRED'))
 );
 
 CREATE TABLE IF NOT EXISTS public.short_videos
@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS public.short_videos
     is_explicit_free boolean
 );
 
-CREATE OR REPLACE FUNCTION update_short_video_status()
+CREATE OR REPLACE FUNCTION update_upload_session_status_from_short_videos()
 RETURNS trigger AS $$
 BEGIN
     IF NEW.standardized IS NOT NULL
@@ -56,12 +56,23 @@ CREATE TRIGGER trg_update_upload_session_status_from_short_videos
 AFTER UPDATE ON public.short_videos
 FOR EACH ROW
 EXECUTE FUNCTION update_upload_session_status_from_short_videos();
+
+CREATE OR REPLACE FUNCTION update_upload_session_completed()
+RETURNS trigger AS $$
+BEGIN
+    IF NEW.short_video_completed = true
+    THEN
+        UPDATE public.upload_sessions
+        SET status = 'COMPLETED'
+        WHERE uid = NEW.uid
+            AND status = 'ACTIVE';
+        PERFORM pg_notify('upload_session_completed', NEW.uid::text);
     END IF;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trg_update_short_video_status
-BEFORE UPDATE ON public.short_videos
+CREATE TRIGGER trg_update_upload_session_completed
+AFTER UPDATE ON public.upload_sessions
 FOR EACH ROW
-EXECUTE FUNCTION update_short_video_status();
+EXECUTE FUNCTION update_upload_session_completed();
