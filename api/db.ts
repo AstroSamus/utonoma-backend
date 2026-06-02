@@ -47,6 +47,8 @@ export interface ShortVideoRow {
   mid_res_cid: string | null
   low_res: string | null
   low_res_cid: string | null
+  metadata: string | null
+  metadata_cid: string | null
   is_copyright_free: boolean | null
   is_explicit_free: boolean | null
 }
