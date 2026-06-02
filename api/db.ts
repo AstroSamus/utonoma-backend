@@ -1,6 +1,11 @@
-import { Pool, QueryResultRow } from "pg";
-import dotenv from "dotenv";
-import { logger } from "./infrastructure/logger.js";
+import { 
+  Pool, 
+  QueryResultRow,
+  Client
+} from 'pg'
+import dotenv from 'dotenv'
+import { logger } from './infrastructure/logger.js'
+import { eventBus } from './infrastructure/eventBus.js'
 
 dotenv.config();
 
@@ -56,8 +61,26 @@ const pool = new Pool({
 
 pool.on('error', (err) => {
   console.error("Unexpected error on idle PostgreSQL client", err);
+})
+
+//Creating a new reserved connection only for listening pg notify events
+const client = new Client({
+  host: process.env.PG_HOST,
+  port: Number(process.env.PG_PORT ?? 5432),
+  user: process.env.PG_USER,
+  password: process.env.PG_PASSWORD,
+  database: process.env.PG_DATABASE,
 });
 
+(async () => {
+  await client.connect()
+  await client.query('LISTEN upload_session_completed')
+  client.on('notification', (msg) => {
+    if(msg.payload) {
+      eventBus.emit('upload_session_completed', { sessionId: msg.payload})
+    }
+  })
+})()
 
 export async function query<T extends QueryResultRow = any>(text: string, params?: unknown[]): Promise<{ rows: T[]}> {
   try {
