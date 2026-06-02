@@ -44,6 +44,8 @@ RETURNS trigger AS $$
 BEGIN
     IF NEW.standardized IS NOT NULL
         AND NEW.standardized_cid IS NOT NULL
+        AND NEW.metadata IS NOT NULL
+        AND NEW.metadata_cid IS NOT NULL
     THEN
         UPDATE public.upload_sessions
         SET short_video_completed = true
