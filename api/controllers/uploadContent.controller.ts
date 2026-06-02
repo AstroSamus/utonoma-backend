@@ -317,12 +317,14 @@ export const uploadShortVideoMetadata = async (
     shortVideoDescription
   }))
 
-  console.log(metadataFilePath)
   await writeFile(
     metadataFilePath,
     sanitizedMetadata,
     'utf-8'
   )
+
+  db.updateShortVideoMetadata(sessionId, metadataFilePath)
+
   return res.status(200).send('ok')
 
 }

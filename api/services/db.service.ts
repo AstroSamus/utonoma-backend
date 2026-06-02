@@ -137,10 +137,22 @@ async function updateShortVideoStandardized(
   `, [sessionId, standardizedVideoUri, standardizedVideoCid])
 }
 
+async function updateShortVideoMetadata(
+  sessionId: string,
+  metadataFilePath: string 
+) {
+  await query(`
+    UPDATE public.short_videos
+    SET metadata = $2
+    WHERE upload_session_id = $1
+  `, [sessionId, metadataFilePath])
+}
+
 export const db = {
   createUploadSession,
   getUploadSession,
   upsertShortVideo,
   getShortVideo,
-  updateShortVideoStandardized
+  updateShortVideoStandardized,
+  updateShortVideoMetadata
 }
