@@ -10,6 +10,7 @@ import {
   createWriteStream,
   unlink
 } from 'fs'
+import { writeFile } from 'fs/promises'
 import path from 'path'
 import { randomUUID } from 'crypto'
 import os from 'os'
@@ -265,5 +266,63 @@ export const uploadShortVideo = async (
   })
 
   req.pipe(busboy)
+
+}
+
+export const uploadShortVideoMetadata = async (
+  req: Request<{sessionId: string}, any, { shortVideoTitle: string, shortVideoDescription: string}>, 
+  res: Response
+) => {
+  const { sessionId } = req.params
+  const { 
+    shortVideoTitle,
+    shortVideoDescription
+  } = req.body  
+
+  if(!sessionId || !shortVideoDescription || !shortVideoTitle) {
+    const response: ApiError = {
+      code: 'ERROR_INVALID_REQUEST_PARAMS',
+      message: 'Invalid request parameters. "sessionId", "shortVideoDescription" and "shortVideoTitle" must be provided.'
+    }
+    return res.status(400).json(response)  
+  }
+
+  if(shortVideoTitle?.length > 100) {
+    const response: ApiError = {
+      code: 'ERROR_INVALID_TITLE',
+      message: 'Invalid title for your content, it should be 100 characters or less'
+    }
+    return res.status(400).json(response)
+  }
+
+  if(shortVideoDescription?.length > 2000) {
+    const response: ApiError = {
+      code: 'ERROR_INVALID_DESCRIPTION',
+      message: 'Invalid description for your content, it should be 2000 characters or less'
+    }
+    return res.status(400).json(response)
+  }
+
+  const sessionData = await db.getUploadSession(sessionId)
+
+  if(!sessionData) {
+    const response: ApiError = {
+      code: 'ERROR_UPLOAD_SESSION_NOT_FOUND',
+      message: 'Upload session not found.'
+    }
+    return res.status(404).json(response)  
+  }
+
+  const metadataFilePath = path.join(os.tmpdir(), randomUUID() + '.json')
+  console.log(metadataFilePath)
+  await writeFile(
+    metadataFilePath, 
+    JSON.stringify({    
+      shortVideoTitle,
+      shortVideoDescription
+    }),
+    'utf-8'
+  )
+  return res.status(200).send('ok')
 
 }
