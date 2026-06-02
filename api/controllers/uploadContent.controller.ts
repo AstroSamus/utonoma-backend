@@ -19,6 +19,11 @@ import { logger } from '../infrastructure/logger.js'
 import {
   videoQueue
 } from '../../queue/video.queue.js'
+import { 
+  eventBus,
+  EventTypesMap
+} from '../infrastructure/eventBus.js'
+import { ShortVideoRow } from '../db.js' 
 
 type CreateUploadSessionBody = {
   creatorAddress: string
@@ -96,19 +101,37 @@ export const subToProgressUpdates = async (
 
     res.write(`event: connected\n`);
 
-    /**
-     * Subscribe to events related to upload session progress
-     * and send updates to the client
-     */
-    const intervalId = setInterval(() => {
-      res.write(`event: progress\n`);
-      res.write(`data: test data\n\n`);
-    }, 20000)
+    //Detect 'upload session completed' events from db
+    const unsubFromUploadSessionCompleted = eventBus.on(
+      'upload_session_completed', 
+      async (payload) => {
+        //check if the 'completed' event comes from our target content
+        console.log('event received in controller: ', payload)
+        if(sessionData.uid === payload.sessionId) {
+          //get video information
+          const shortVideoData = await db.getShortVideo(sessionData.uid)
+          
+          if(!shortVideoData) {
+            res.end() //to do: fail gracefully (corrupted data, upload short video again)
+            return
+          }
 
+          const response: ApiResponse<ShortVideoRow> = {
+            data: shortVideoData
+          }
+          res.write(`event: completed\n`)
+          res.write(`data: ${JSON.stringify(response)}\n\n`)
+          res.end()
+          unsubFromUploadSessionCompleted()
+          return
+        }
+      }
+    )
     req.on('close', () => {
-      clearInterval(intervalId)
+      unsubFromUploadSessionCompleted()
     })
   } else if(sessionData.status === 'COMPLETED') {
+    //to do: if status is completed then return the CIDs in bytes32 to the user
     const response: ApiError = {
       code: 'ERROR_UPLOAD_SESSION_ALREADY_COMPLETED',
       message: 'The upload session is already completed.'
