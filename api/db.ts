@@ -36,9 +36,12 @@ export interface UploadSessionUidRow { uid: string }
 export interface ShortVideoRow {
   upload_session_id: string
   original: string
-  standarized: string | null
+  standardized: string | null
+  standardized_cid: string | null
   mid_res: string | null
+  mid_res_cid: string | null
   low_res: string | null
+  low_res_cid: string | null
   is_copyright_free: boolean | null
   is_explicit_free: boolean | null
 }
@@ -49,9 +52,9 @@ const pool = new Pool({
   user: process.env.PG_USER,
   password: process.env.PG_PASSWORD,
   database: process.env.PG_DATABASE,
-});
+})
 
-pool.on("error", (err) => {
+pool.on('error', (err) => {
   console.error("Unexpected error on idle PostgreSQL client", err);
 });
 
