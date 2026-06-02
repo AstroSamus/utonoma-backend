@@ -23,6 +23,7 @@ import {
 import { eventBus } from '../infrastructure/eventBus.js'
 import { ShortVideoRow } from '../db.js' 
 import DOMPurify from 'isomorphic-dompurify'
+import { simulateIpfsCid } from '../utils/ipfs.utils.js'
 
 type CreateUploadSessionBody = {
   creatorAddress: string
@@ -301,30 +302,46 @@ export const uploadShortVideoMetadata = async (
     return res.status(400).json(response)
   }
 
-  const sessionData = await db.getUploadSession(sessionId)
+  try {
+    const sessionData = await db.getUploadSession(sessionId)
 
-  if(!sessionData) {
-    const response: ApiError = {
-      code: 'ERROR_UPLOAD_SESSION_NOT_FOUND',
-      message: 'Upload session not found.'
+    if(!sessionData) {
+      const response: ApiError = {
+        code: 'ERROR_UPLOAD_SESSION_NOT_FOUND',
+        message: 'Upload session not found.'
+      }
+      return res.status(404).json(response)  
     }
-    return res.status(404).json(response)  
+
+    const metadataFilePath = path.join(os.tmpdir(), randomUUID() + '.json')
+    const sanitizedMetadata = DOMPurify.sanitize(JSON.stringify({    
+      shortVideoTitle,
+      shortVideoDescription
+    }))
+
+    await writeFile(
+      metadataFilePath,
+      sanitizedMetadata,
+      'utf-8'
+    )
+
+    const [error, metadataSimulatedCid] = await simulateIpfsCid(metadataFilePath)
+
+    if(!error && metadataSimulatedCid) {
+      await db.updateShortVideoMetadata(sessionId, metadataFilePath, metadataSimulatedCid)
+      const response: ApiResponse<{status: string}> = {
+        data: { status: 'ok' }
+      }
+      return res.status(200).json(response)
+    } else {
+      throw new Error(`${error ? error : ''} Unexpected Error when uploading metadata`)
+    }
+  } catch(error) {
+    logger.error({error}, 'error when uploading metadata')
+    const errorResp: ApiError = { 
+      code: 'UNKNOWN_ERROR',
+      message: 'Unknown error when uploading metadata'
+    }
+    return res.status(404).json(errorResp) 
   }
-
-  const metadataFilePath = path.join(os.tmpdir(), randomUUID() + '.json')
-  const sanitizedMetadata = DOMPurify.sanitize(JSON.stringify({    
-    shortVideoTitle,
-    shortVideoDescription
-  }))
-
-  await writeFile(
-    metadataFilePath,
-    sanitizedMetadata,
-    'utf-8'
-  )
-
-  db.updateShortVideoMetadata(sessionId, metadataFilePath)
-
-  return res.status(200).send('ok')
-
 }
