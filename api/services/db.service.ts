@@ -139,13 +139,14 @@ async function updateShortVideoStandardized(
 
 async function updateShortVideoMetadata(
   sessionId: string,
-  metadataFilePath: string 
+  metadataFilePath: string,
+  metadataIpfsCid: Bytes32
 ) {
   await query(`
     UPDATE public.short_videos
-    SET metadata = $2
+    SET metadata = $2, metadata_cid = $3
     WHERE upload_session_id = $1
-  `, [sessionId, metadataFilePath])
+  `, [sessionId, metadataFilePath, metadataIpfsCid])
 }
 
 export const db = {
