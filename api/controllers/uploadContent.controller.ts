@@ -20,11 +20,9 @@ import { logger } from '../infrastructure/logger.js'
 import {
   videoQueue
 } from '../../queue/video.queue.js'
-import { 
-  eventBus,
-  EventTypesMap
-} from '../infrastructure/eventBus.js'
+import { eventBus } from '../infrastructure/eventBus.js'
 import { ShortVideoRow } from '../db.js' 
+import DOMPurify from 'isomorphic-dompurify'
 
 type CreateUploadSessionBody = {
   creatorAddress: string
@@ -314,13 +312,15 @@ export const uploadShortVideoMetadata = async (
   }
 
   const metadataFilePath = path.join(os.tmpdir(), randomUUID() + '.json')
+  const sanitizedMetadata = DOMPurify.sanitize(JSON.stringify({    
+    shortVideoTitle,
+    shortVideoDescription
+  }))
+
   console.log(metadataFilePath)
   await writeFile(
-    metadataFilePath, 
-    JSON.stringify({    
-      shortVideoTitle,
-      shortVideoDescription
-    }),
+    metadataFilePath,
+    sanitizedMetadata,
     'utf-8'
   )
   return res.status(200).send('ok')
