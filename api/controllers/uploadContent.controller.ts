@@ -111,13 +111,22 @@ export const subToProgressUpdates = async (
           //get video information
           const shortVideoData = await db.getShortVideo(sessionData.uid)
           
-          if(!shortVideoData) {
+          if(!shortVideoData || !shortVideoData?.standardized_cid || !shortVideoData?.metadata_cid) {
             res.end() //to do: fail gracefully (corrupted data, upload short video again)
             return
           }
 
-          const response: ApiResponse<ShortVideoRow> = {
-            data: shortVideoData
+
+          const response: ApiResponse<{ 
+            sessionId: string,
+            shortVideoCid: string,
+            shortVideoMetadataCid: string
+          }> = {
+            data: {
+              sessionId: shortVideoData.upload_session_id,
+              shortVideoCid: shortVideoData.standardized_cid,
+              shortVideoMetadataCid: shortVideoData.metadata_cid
+            }
           }
           res.write(`event: completed\n`)
           res.write(`data: ${JSON.stringify(response)}\n\n`)
