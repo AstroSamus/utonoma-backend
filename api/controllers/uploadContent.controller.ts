@@ -81,7 +81,7 @@ export const subToProgressUpdates = async (
 
   const sessionData = await db.getUploadSession(sessionId)
 
-  if(sessionData === null) {
+  if(!sessionData) {
     const response: ApiError = {
       code: 'ERROR_UPLOAD_SESSION_NOT_FOUND',
       message: 'Upload session not found.'
