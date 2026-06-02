@@ -33,6 +33,8 @@ CREATE TABLE IF NOT EXISTS public.short_videos
     mid_res_cid varchar(66),
     low_res text,
     low_res_cid varchar(66),
+    metadata text,
+    metadata_cid varchar(66),
     is_copyright_free boolean,
     is_explicit_free boolean
 );
