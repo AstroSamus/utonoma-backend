@@ -26,7 +26,7 @@ const worker = new Worker(
 
     }
     if(uploadSessionInfo?.status === 'EXPIRED' || uploadSessionInfo?.status === 'COMPLETED') {
-      throw new Error(`Upload session ${job.data.sessionId} is expired, cannot process task.`)
+      throw new Error(`Upload session ${job.data.sessionId} is expired or completed, cannot process task.`)
     }
 
 
@@ -57,6 +57,7 @@ const worker = new Worker(
           standardizedVideoCid
         )
       } catch(err) {
+        //to do: Bug: If you delete the db and you fulfill pendin work the server and the worker will crash
         throw new Error(`Error updating database for session ${job.data.sessionId}: ${err instanceof Error ? err.message : String(err)}`)
       }
     }

@@ -27,7 +27,7 @@ export interface UploadUidRow { uid: number };
  * Types for upload_sessions table
  */
 
-export type UploadSessionStatus = 'ACTIVE' | 'COMPLETED' | 'EXPIRED'
+export type UploadSessionStatus = 'ACTIVE' | 'READY' | 'COMPLETED' | 'EXPIRED' | 'INCONSISTENT'
 
 export interface UploadSessionRow {
   uid: string
@@ -76,10 +76,10 @@ const client = new Client({
 
 (async () => {
   await client.connect()
-  await client.query('LISTEN upload_session_completed')
+  await client.query('LISTEN upload_session_ready')
   client.on('notification', (msg) => {
     if(msg.payload) {
-      eventBus.emit('upload_session_completed', { sessionId: msg.payload})
+      eventBus.emit('upload_session_ready', { sessionId: msg.payload})
     }
   })
 })()

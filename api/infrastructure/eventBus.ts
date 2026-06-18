@@ -1,7 +1,7 @@
 import EventEmmiter from 'events'
 
 export type EventTypesMap = {
-  upload_session_completed: { sessionId: string }
+  upload_session_ready: { sessionId: string }
 }
 
 const eventEmmiter = new EventEmmiter()
