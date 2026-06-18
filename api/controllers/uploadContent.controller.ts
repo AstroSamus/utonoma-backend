@@ -3,7 +3,9 @@ import { ethers } from 'ethers'
 import { db } from '../services/db.service.js'
 import { 
   ApiResponse,
-  ApiError
+  ApiError,
+  ProgressUpdate,
+  SseData
 } from '../types.js'
 import Busboy from 'busboy'
 import { 
@@ -70,88 +72,120 @@ export const createUploadSession = async (req: Request, res: Response) => {
   }
 }
 
+/**@warning This endpoint is only for SSE */
 export const subToProgressUpdates = async (
   req: Request <{ sessionId: string } >, 
   res: Response
 ) => {
+  res.setHeader("Content-Type", "text/event-stream")
+  res.setHeader("Cache-Control", "no-cache")
+  res.setHeader("Connection", "keep-alive")
+  res.setHeader('X-Accel-Buffering', 'no')
+
+  res.flushHeaders?.()
+
   const { sessionId } = req.params
 
   if(!sessionId) {
-    const response: ApiError = {
-      code: 'ERROR_INVALID_REQUEST_PARAMS_SESSION_ID',
-      message: 'Invalid request parameters. "sessionId" must be provided.'
+    const response: ProgressUpdate = {
+      event: 'error',
+      error: {
+        code: 'ERROR_INVALID_REQUEST_PARAMS_SESSION_ID',
+        message: 'Invalid request parameters. "sessionId" must be provided.'
+      } satisfies ApiError
     }
-    return res.status(400).json(response)  
+    res.write(`data: ${JSON.stringify(response)}\n\n` satisfies SseData)
+    res.end()
+    return
   }
 
   const sessionData = await db.getUploadSession(sessionId)
 
   if(!sessionData) {
-    const response: ApiError = {
-      code: 'ERROR_UPLOAD_SESSION_NOT_FOUND',
-      message: 'Upload session not found.'
+    const response: ProgressUpdate = {
+      event: 'error',
+      error: {
+        code: 'ERROR_UPLOAD_SESSION_NOT_FOUND',
+        message: 'Upload session not found.'
+      } satisfies ApiError
     }
-    return res.status(404).json(response)  
+    res.write(`data: ${JSON.stringify(response)}\n\n` satisfies SseData)
+    res.end()
+    return
   }
 
   if(sessionData.status == 'ACTIVE') {
-    res.setHeader("Content-Type", "text/event-stream");
-    res.setHeader("Cache-Control", "no-cache");
-    res.setHeader("Connection", "keep-alive");
+    res.write(`data: ${JSON.stringify({ event: 'connect' } satisfies ProgressUpdate)}\n\n` satisfies SseData)
 
-    res.write(`event: connected\n`);
-
-    //Detect 'upload session completed' events from db
-    const unsubFromUploadSessionCompleted = eventBus.on(
-      'upload_session_completed', 
+    //Detect 'upload session ready' events from db
+    const unsubFromUploadSessionReady = eventBus.on(
+      'upload_session_ready', 
       async (payload) => {
-        //check if the 'completed' event comes from our target content
+        //check if the 'ready' event comes from our target content
         console.log('event received in controller: ', payload)
         if(sessionData.uid === payload.sessionId) {
           //get video information
           const shortVideoData = await db.getShortVideo(sessionData.uid)
           
           if(!shortVideoData || !shortVideoData?.standardized_cid || !shortVideoData?.metadata_cid) {
-            res.end() //to do: fail gracefully (corrupted data, upload short video again)
+            res.write(`data: ${JSON.stringify({
+              event: 'error',
+              error: {
+                code: 'UNKNOWN_ERROR',
+                message: 'Some data got corrupted'
+              }
+            } satisfies ProgressUpdate)}\n\n` satisfies SseData)
+            res.end() //to do: fail gracefully (corrupted data; upload short video again)
             return
           }
 
 
-          const response: ApiResponse<{ 
+          const response: ProgressUpdate<{ 
             sessionId: string,
             shortVideoCid: string,
             shortVideoMetadataCid: string
           }> = {
+            event: 'complete',
+            error: null,
             data: {
               sessionId: shortVideoData.upload_session_id,
               shortVideoCid: shortVideoData.standardized_cid,
               shortVideoMetadataCid: shortVideoData.metadata_cid
             }
           }
-          res.write(`event: completed\n`)
-          res.write(`data: ${JSON.stringify(response)}\n\n`)
+          res.write(`data: ${JSON.stringify(response)}\n\n` satisfies SseData)
           res.end()
-          unsubFromUploadSessionCompleted()
+          unsubFromUploadSessionReady()
           return
         }
       }
     )
     req.on('close', () => {
-      unsubFromUploadSessionCompleted()
+      unsubFromUploadSessionReady()
     })
-  } else if(sessionData.status === 'COMPLETED') {
-    //to do: if status is completed then return the CIDs in bytes32 to the user
+  } else if(sessionData.status === 'READY') {
+    //to do: if status is ready then return the CIDs in bytes32 to the user
     const response: ApiError = {
-      code: 'ERROR_UPLOAD_SESSION_ALREADY_COMPLETED',
-      message: 'The upload session is already completed.'
+      code: 'ERROR_UPLOAD_SESSION_ALREADY_READY',
+      message: 'The upload session is already ready.'
     }
-    return res.status(400).json(response)  
+    res.write(`data: ${JSON.stringify({
+      event: 'error',
+      error: response
+    } satisfies ProgressUpdate)}\n\n` satisfies SseData)
+    res.end()
+    return
   } else if(sessionData.status === 'EXPIRED') {
     const response: ApiError = {
       code: 'ERROR_UPLOAD_SESSION_EXPIRED',
       message: 'The upload session has expired, create a new one.'
     }
-    return res.status(400).json(response)  
+    res.write(`data: ${JSON.stringify({
+      event: 'error',
+      error: response
+    } satisfies ProgressUpdate)}\n\n` satisfies SseData)
+    res.end()
+    return
   }
 }
 
@@ -266,7 +300,7 @@ export const uploadShortVideo = async (
         if(err) logger.error(err, 'error when deleting video')
       })
       const errorResp: ApiError = { 
-        code: 'ERROR_FILE_TOO_LARGE',
+        code: 'ERROR_FILE_TOO_BIG',
         message: 'File too large'
       }
       return res.status(413).json(errorResp)
