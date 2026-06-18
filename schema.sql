@@ -20,7 +20,8 @@ CREATE TABLE IF NOT EXISTS public.upload_sessions
     started_at timestamptz NOT NULL DEFAULT now(),
     short_video_completed boolean NOT NULL DEFAULT false,
     status text NOT NULL DEFAULT 'ACTIVE'
-        CHECK (status IN ('ACTIVE', 'COMPLETED', 'EXPIRED'))
+        --READY means processed but not in Blockchain nor IPFS, COMPLETED means In blockchain and in IPFS 
+        CHECK (status IN ('ACTIVE', 'READY', 'COMPLETED', 'EXPIRED', 'INCONSISTENT'))
 );
 
 CREATE TABLE IF NOT EXISTS public.short_videos
@@ -49,8 +50,7 @@ BEGIN
     THEN
         UPDATE public.upload_sessions
         SET short_video_completed = true
-        WHERE uid = NEW.upload_session_id
-            AND short_video_completed IS DISTINCT FROM true;
+        WHERE uid = NEW.upload_session_id;
     END IF;
     RETURN NEW;
 END;
@@ -61,22 +61,22 @@ AFTER UPDATE ON public.short_videos
 FOR EACH ROW
 EXECUTE FUNCTION update_upload_session_status_from_short_videos();
 
-CREATE OR REPLACE FUNCTION update_upload_session_completed()
+CREATE OR REPLACE FUNCTION update_upload_session_ready()
 RETURNS trigger AS $$
 BEGIN
     IF NEW.short_video_completed = true
     THEN
         UPDATE public.upload_sessions
-        SET status = 'COMPLETED'
+        SET status = 'READY'
         WHERE uid = NEW.uid
-            AND status = 'ACTIVE';
-        PERFORM pg_notify('upload_session_completed', NEW.uid::text);
+            AND status IN ('ACTIVE', 'INCONSISTENT');
+        PERFORM pg_notify('upload_session_ready', NEW.uid::text);
     END IF;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trg_update_upload_session_completed
+CREATE TRIGGER trg_update_upload_session_ready
 AFTER UPDATE ON public.upload_sessions
 FOR EACH ROW
-EXECUTE FUNCTION update_upload_session_completed();
+EXECUTE FUNCTION update_upload_session_ready();
