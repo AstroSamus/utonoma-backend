@@ -33,7 +33,7 @@ export interface UploadSessionRow {
   uid: string
   creator_address: string
   started_at: string
-  content_uris: unknown | null
+  short_video_completed: boolean
   status: UploadSessionStatus
 }
 export interface UploadSessionUidRow { uid: string }
