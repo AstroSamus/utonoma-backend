@@ -149,11 +149,24 @@ async function updateShortVideoMetadata(
   `, [sessionId, metadataFilePath, metadataIpfsCid])
 }
 
+/**
+ * @developer Note that latest_block_evaluated is a big int in the postgresql db
+ * but in pg that is our handler 
+*/
+async function getLatestBlockEvaluated(network: string = "avalanche_fuji"): Promise<string> {
+  const { rows } = await query(`
+    SELECT latest_block_evaluated FROM public.blockchain_state
+    WHERE network = $1
+  `, [network])
+  return rows[0]
+}
+
 export const db = {
   createUploadSession,
   getUploadSession,
   upsertShortVideo,
   getShortVideo,
   updateShortVideoStandardized,
-  updateShortVideoMetadata
+  updateShortVideoMetadata,
+  getLatestBlockEvaluated,
 }

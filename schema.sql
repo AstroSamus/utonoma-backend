@@ -40,6 +40,12 @@ CREATE TABLE IF NOT EXISTS public.short_videos
     is_explicit_free boolean
 );
 
+CREATE TABLE IF NOT EXISTS public.blockchain_state
+(
+    network text PRIMARY KEY,
+    latest_block_evaluated BIGINT NOT NULL
+)
+
 CREATE OR REPLACE FUNCTION update_upload_session_status_from_short_videos()
 RETURNS trigger AS $$
 BEGIN
