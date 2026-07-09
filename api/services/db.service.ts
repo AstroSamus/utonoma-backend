@@ -5,6 +5,7 @@ import {
   UploadStatus ,
   UploadSessionRow,
   UploadSessionUidRow,
+  UploadSessionStatus,
   ShortVideoRow
 } from '../db.js'
 import { Bytes32, CreatePendingUploadParams } from '../types.js'
@@ -48,18 +49,17 @@ export async function createUploadEntryWithNoData() : Promise<number> {
 
 /**
  * Usage sample:
-  updateUploadStatus(5, 'DISMISSED')
+  updateUploadSessionStatus('3f53d610', 'COMPLETED')
  */
-export async function updateUploadStatus(
-  uid: number, 
-  status: UploadStatus
-): Promise<PendingUploadRow> {
-  const { rows } = await query<PendingUploadRow>(`
-    UPDATE public.uploads 
-    SET status='${status}'
-	  WHERE uid=${uid};
-  `)
-  return rows[0]
+async function updateUploadSessionStatus(
+  sessionId: string, 
+  status: UploadSessionStatus 
+): Promise<void> {
+  await query<PendingUploadRow>(`
+    UPDATE public.upload_sessions
+    SET status= $2
+	  WHERE uid= $1;
+  `, [sessionId, status])
 }
 
 export async function updateMetadataCid(uid: number, metadataCid?: string) {
@@ -175,6 +175,8 @@ async function getLatestBlockEvaluated(network: string = "avalanche_fuji"): Prom
 export const db = {
   createUploadSession,
   getUploadSession,
+  getReadyUploadSessions,
+  updateUploadSessionStatus,
   upsertShortVideo,
   getShortVideo,
   updateShortVideoStandardized,
