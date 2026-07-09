@@ -11,6 +11,7 @@
     "dev": "ts-node-dev --respawn --transpile-only api/improvedServert.ts",
     "newDev": "tsx --watch api/server.ts",
     "workers": "tsx --watch workers/video.worker.ts",
+    "ipfsWorker": "tsx --watch workers/ipfs.worker.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
