@@ -71,11 +71,13 @@ CREATE OR REPLACE FUNCTION update_upload_session_ready()
 RETURNS trigger AS $$
 BEGIN
     IF NEW.short_video_completed = true
+        AND OLD.short_video_completed = false 
+        AND OLD.status = 'ACTIVE'
     THEN
         UPDATE public.upload_sessions
         SET status = 'READY'
         WHERE uid = NEW.uid
-            AND status IN ('ACTIVE', 'INCONSISTENT');
+            AND status IN ('ACTIVE');
         PERFORM pg_notify('upload_session_ready', NEW.uid::text);
     END IF;
     RETURN NEW;
