@@ -102,6 +102,17 @@ async function getUploadSession(
   return rows[0]
 }
 
+/**
+ * Extracts all the upload sessions that are on 'ready' state, this means that they are processed but not in IPFS yet
+ */
+async function getReadyUploadSessions(): Promise<UploadSessionRow[]> {
+  const { rows } = await query<UploadSessionRow>(`
+    SELECT * FROM public.upload_sessions
+    WHERE status = 'READY';
+  `)
+  return rows
+}
+
 async function upsertShortVideo(
   sessionId: string,
   shortVideoUri: string
