@@ -1,5 +1,4 @@
 import { Request, Response } from 'express'
-import { ethers } from 'ethers'
 import { db } from '../../infrastructure/db.js'
 import { 
   ApiResponse,
@@ -26,24 +25,8 @@ import { eventBus } from '../../infrastructure/eventBus.js'
 import { ShortVideoRow } from '../../infrastructure/db.js' 
 import DOMPurify from 'isomorphic-dompurify'
 import { simulateIpfsCid } from '../../shared/utils/ipfs.utils.js'
-
-type CreateUploadSessionBody = {
-  creatorAddress: string
-}
-
-
-function isCreateUploadSessionBody(value: unknown): value is CreateUploadSessionBody {
-  if (typeof value !== 'object' || value === null) {
-    return false
-  }
-  const body = value as Record<string, unknown>
-
-  return (
-    typeof body.creatorAddress === 'string' &&
-    ethers.isAddress(body.creatorAddress)
-  )
-}
-
+import { CreateUploadSessionBody } from '../types.js'
+import { isCreateUploadSessionBody } from '../guards.js'
 
 export const createUploadSession = async (req: Request, res: Response) => {
   if(!isCreateUploadSessionBody(req.body)) {
