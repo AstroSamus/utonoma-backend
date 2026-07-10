@@ -5,23 +5,23 @@ import {
   VideoMetadata,
   UploadVideoToIpfsResponse,
   PinataPinJsonResponse
-} from '../types.js'
+} from '../../types.js'
 import {
   uploadJsonToIpfsService,
   uploadVideoToIpfsService
-} from '../services/ipfs.service.js'
+} from '../../infrastructure/ipfs.js'
 import { 
   createUploadEntryWithNoData,
   updateUploadStatus,
   updateMetadataCid,
   updateContentCid
-} from '../services/db.service.js'
-import { logger } from "../infrastructure/logger.js"
+} from '../../infrastructure/db.js'
+import { logger } from "../../shared/logger.js"
 import { createWriteStream } from 'fs';
 import path from 'path';
 import { randomUUID } from 'crypto';
 import { pipeline } from 'stream/promises';
-import { videoUtils } from '../utils/videoUtils.js';
+import { videoUtils } from '../../shared/utils/videoUtils.js';
 
 const ALLOWED_VIDEO_TYPES = new Set([
   'video/mp4',

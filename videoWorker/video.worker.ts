@@ -1,15 +1,15 @@
 import { Worker } from 'bullmq'
-import { db } from '../api/services/db.service.js'
-import { videoUtils } from '../api/utils/videoUtils.js'
+import { db } from '../infrastructure/db.js'
+import { videoUtils } from '../shared/utils/videoUtils.js'
 import path from 'path'
 import os from 'os'
 import { randomUUID } from 'crypto'
-import { simulateIpfsCid } from '../api/utils/ipfs.utils.js'
+import { simulateIpfsCid } from '../shared/utils/ipfs.utils.js'
 import {
   videoQueueConnection,
   VIDEO_QUEUE_NAME
-} from '../queue/video.queue.js'
-import { Bytes32 } from '../api/types.js'
+} from '../infrastructure/queue/video.queue.js'
+import { Bytes32 } from '../types.js'
 
 const worker = new Worker(
   VIDEO_QUEUE_NAME,

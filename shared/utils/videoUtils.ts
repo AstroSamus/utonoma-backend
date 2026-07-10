@@ -2,8 +2,8 @@ import { spawn } from 'child_process'
 import { 
   GetActualVideoInfoResult, 
   CodecInfo
- } from '../types.js'
-import { logger } from '../infrastructure/logger.js'
+ } from '../../types.js'
+import { logger } from '../logger.js'
 
 const ALLOWED_VIDEO_CODECS = new Set([
   'h264',

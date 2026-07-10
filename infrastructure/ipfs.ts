@@ -3,7 +3,7 @@ import {
   PinataPinJsonResponse, 
   VideoMetadata,
   isPinataPinJsonResponse 
-} from '../types.js'
+} from '../../types.js'
 import { Readable } from "node:stream";
 import FormData from 'form-data'
 import axios from "axios"

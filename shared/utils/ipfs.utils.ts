@@ -2,7 +2,7 @@ import { createReadStream } from 'fs'
 // @ts-ignore
 import Hash from 'ipfs-only-hash'
 import bs58 from 'bs58'
-import { Bytes32 } from '../types.js'
+import { Bytes32 } from '../../types.js'
 
 export type CidV0 = `Qm${string}`
 

@@ -5,13 +5,13 @@ import {
   createPendingUpload,
   updateUploadStatus,
   createUploadEntryWithNoData
-} from './services/db.service.js'
+} from '../infrastructure/db.js'
 import {
   VideoMetadata, 
   PinataPinJsonPayload, 
   PinataPinJsonResponse,
   isPinataPinJsonResponse
-} from './types.js'
+} from '../types.js'
 import { uploadVideoToIpfsController } from "./controllers/Ipfs.controller.js";
 
 

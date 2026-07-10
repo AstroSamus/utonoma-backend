@@ -1,12 +1,12 @@
 import { Request, Response } from 'express'
 import { ethers } from 'ethers'
-import { db } from '../services/db.service.js'
+import { db } from '../../infrastructure/db.js'
 import { 
   ApiResponse,
   ApiError,
   ProgressUpdate,
   SseData
-} from '../types.js'
+} from '../../types.js'
 import Busboy from 'busboy'
 import { 
   createWriteStream,
@@ -17,15 +17,15 @@ import path from 'path'
 import { randomUUID } from 'crypto'
 import os from 'os'
 import { pipeline } from 'stream/promises'
-import { videoUtils } from '../utils/videoUtils.js'
-import { logger } from '../infrastructure/logger.js'
+import { videoUtils } from '../../shared/utils/videoUtils.js'
+import { logger } from '../../shared/logger.js'
 import {
   videoQueue
-} from '../../queue/video.queue.js'
-import { eventBus } from '../infrastructure/eventBus.js'
-import { ShortVideoRow } from '../db.js' 
+} from '../../infrastructure/queue/video.queue.js'
+import { eventBus } from '../../infrastructure/eventBus.js'
+import { ShortVideoRow } from '../../infrastructure/db.js' 
 import DOMPurify from 'isomorphic-dompurify'
-import { simulateIpfsCid } from '../utils/ipfs.utils.js'
+import { simulateIpfsCid } from '../../shared/utils/ipfs.utils.js'
 
 type CreateUploadSessionBody = {
   creatorAddress: string
