@@ -1,7 +1,7 @@
 import { ethers } from 'ethers'
 import { CreateUploadSessionBody } from './types.js'
 
-export function isCreateUploadSessionBody(value: unknown): value is CreateUploadSessionBody {
+function isCreateUploadSessionBody(value: unknown): value is CreateUploadSessionBody {
   if (typeof value !== 'object' || value === null) {
     return false
   }
@@ -11,4 +11,8 @@ export function isCreateUploadSessionBody(value: unknown): value is CreateUpload
     typeof body.creatorAddress === 'string' &&
     ethers.isAddress(body.creatorAddress)
   )
+}
+
+export const guards = {
+    isCreateUploadSessionBody
 }

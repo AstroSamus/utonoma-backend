@@ -26,10 +26,10 @@ import { ShortVideoRow } from '../../infrastructure/db.js'
 import DOMPurify from 'isomorphic-dompurify'
 import { simulateIpfsCid } from '../../shared/utils/ipfs.utils.js'
 import { CreateUploadSessionBody } from '../types.js'
-import { isCreateUploadSessionBody } from '../guards.js'
+import { guards } from '../guards.js'
 
 export const createUploadSession = async (req: Request, res: Response) => {
-  if(!isCreateUploadSessionBody(req.body)) {
+  if(!guards.isCreateUploadSessionBody(req.body)) {
     const response: ApiError = {
       code: 'ERROR_INVALID_REQUEST_BODY_ADDRESS',
       message: 'Invalid request body. "creatorAddress" must be a valid Ethereum address.'
