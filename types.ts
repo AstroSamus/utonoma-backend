@@ -74,39 +74,6 @@ export interface CodecInfo {
   formatName: string | null
 }
 
-export type ApiError = {
-  code: string
-  message: string
-}
-
-export type ApiResponse<T> = {
-  data?: T
-}
-
 export type Bytes32 = `0x${string}` & {
   readonly __brand: 'Bytes32'
 }
-
-export type SseData = `data: ${string}\n\n`
-
-export type ProgressUpdate<T = unknown> =
-  | {
-    event: 'connect',
-    error?: undefined,
-    data?: undefined
-  }
-  | {
-    event: 'update',
-    error?: null,
-    data: T
-  }
-  | {
-    event: 'complete',
-    error: null,
-    data: T
-  }
-  | {
-    event: 'error',
-    error: ApiError,
-    data?: undefined
-  }

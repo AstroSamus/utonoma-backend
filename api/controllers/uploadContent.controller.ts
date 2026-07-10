@@ -5,7 +5,7 @@ import {
   ApiError,
   ProgressUpdate,
   SseData
-} from '../../types.js'
+} from '../types.js'
 import Busboy from 'busboy'
 import { 
   createWriteStream,
